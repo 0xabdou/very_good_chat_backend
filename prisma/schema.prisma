@@ -13,17 +13,16 @@ generator client {
 model AuthUser {
     id              String @id @default(uuid())
     email           String @unique
-
+    user            User?
     @@map("auth_users")
 }
 
 model User {
     username    String @unique
-    firstName   String? @map("first_name")
-    lastName    String? @map("last_name")
+    name        String? @map("name")
     photoURL    String? @map("photo_url")
     authUser    AuthUser @relation(fields: [authUserID], references: [id])
-    authUserID  String @map("auth_user")
+    authUserID  String @unique @map("auth_user")
 
     @@map("users")
 }
