@@ -24,7 +24,7 @@ const validators = {
 
 @Resolver()
 export class UserResolver {
-  @Query(returns => User)
+  @Query(_returns => User)
   @UseMiddleware(isAuthenticated)
   async me(@Ctx() context: Context): Promise<User> {
     console.log('ME UID: ', context.userID);
@@ -39,7 +39,7 @@ export class UserResolver {
     return user;
   }
 
-  @Mutation(returns => User)
+  @Mutation(_returns => User)
   @UseMiddleware(isAuthenticated)
   async register(
     @Ctx() context: Context,
@@ -59,10 +59,11 @@ export class UserResolver {
     if (usernameTaken)
       throw new ApolloError('Username taken', 'USERNAME_TAKEN');
 
+    let photoPath: string | undefined;
     if (creation.photo) {
       const {createReadStream, mimetype} = await creation.photo;
       const photoType = mimetype.split('/')[1];
-      const photoPath = `${context.userID}_pp.${photoType}`;
+      photoPath = `${context.userID}_pp.${photoType}`;
       const rootPath = path.dirname(require.main?.filename!);
       const writeableStream = createWriteStream(
         `${rootPath}/../storage/${photoPath}`,
@@ -80,28 +81,28 @@ export class UserResolver {
           "INTERNAL_SERVER_ERROR"
         );
       }
-      const user = await context.dataSources.userStore.createUser({
-        authUserID: context.userID!,
-        username: creation.username,
-        name: creation.name,
-        photoURL: photoPath,
-      });
-      if (user.photoURL) {
-        const req = context.req;
-        const PORT = process.env.PORT ?? 4000;
-        const port = (PORT == '80' || PORT == '443') ? '' : `:${PORT}`;
-        user.photoURL = `${req.protocol}://${req.hostname}${port}/${photoPath}`;
-      }
-      return user;
     }
+    const user = await context.dataSources.userStore.createUser({
+      authUserID: context.userID!,
+      username: creation.username,
+      name: creation.name ?? undefined,
+      photoURL: photoPath,
+    });
+    if (user.photoURL) {
+      const req = context.req;
+      const PORT = process.env.PORT ?? 4000;
+      const port = (PORT == '80' || PORT == '443') ? '' : `:${PORT}`;
+      user.photoURL = `${req.protocol}://${req.hostname}${port}/${photoPath}`;
+    }
+    return user;
   }
 
-  @Query(returns => Boolean)
+  @Query(_returns => Boolean)
   @UseMiddleware(isAuthenticated)
   checkUsernameExistence(
     @Ctx() context: Context,
     @Arg('username') username: string
-  ) : Promise<boolean> {
+  ): Promise<boolean> {
     return context.dataSources.userStore.isUsernameTaken(username);
   }
 }

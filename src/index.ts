@@ -62,6 +62,7 @@ const bootstrap = async () => {
   const corsOptions: CorsOptions = {
     origin: (origin, callback) => {
       // To be able to download schema in client project using intellij plugin
+      console.log("REST ORIGIN IS: ", origin);
       if (!origin) callback(null, true);
       if (origin && whitelist.indexOf(origin) !== -1) {
         callback(null, true);

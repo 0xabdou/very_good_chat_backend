@@ -13,7 +13,7 @@ class LoginInput {
 @Resolver()
 export class AuthResolver {
 
-  @Mutation(returns => LoginResponse)
+  @Mutation(_returns => LoginResponse)
   async loginWithGoogle(
     @Arg('input') loginInput: LoginInput,
     @Ctx() context: Context

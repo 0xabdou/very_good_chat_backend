@@ -36,7 +36,7 @@ export class UserStore {
   }
 
   async createUser(args: CreateUserArgs): Promise<User> {
-    const user = await this._prisma.user.create({data: args,});
+    const user = await this._prisma.user.create({data: args});
     return {
       id: user.authUserID,
       username: user.username,
