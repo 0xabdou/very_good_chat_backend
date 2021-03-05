@@ -1,4 +1,4 @@
-import {PrismaClient} from "@prisma/client";
+import {User as PrismaUser, PrismaClient} from "@prisma/client";
 import {User} from "../graphql/types";
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
@@ -16,12 +16,7 @@ export default class UserDataSource {
       where: {authUserID: id}
     });
     if (!user) return null;
-    return {
-      id: user.authUserID,
-      username: user.username,
-      name: user.name ?? undefined,
-      photoURL: user.photoURL ?? undefined,
-    };
+    return this._getGraphQLUser(user);
   }
 
   async isUsernameTaken(username: string) {
@@ -33,6 +28,10 @@ export default class UserDataSource {
 
   async createUser(args: CreateUserArgs): Promise<User> {
     const user = await this._prisma.user.create({data: args});
+    return this._getGraphQLUser(user);
+  }
+
+  _getGraphQLUser(user: PrismaUser) {
     return {
       id: user.authUserID,
       username: user.username,

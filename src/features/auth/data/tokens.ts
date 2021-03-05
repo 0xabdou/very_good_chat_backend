@@ -26,14 +26,16 @@ export class Tokens {
   }
 
   verifyAccessToken(token: string): string {
-    const payload =
-      this._signer.verify(token, process.env.ACCESS_TOKEN_SECRET!) as any;
-    return payload.userID!;
+    return this._verifyToken(token, process.env.ACCESS_TOKEN_SECRET!);
   }
 
   verifyRefreshToken(token: string): string {
+    return this._verifyToken(token, process.env.REFRESH_TOKEN_SECRET!);
+  }
+
+  _verifyToken(token: string, secret: string) {
     const payload =
-      this._signer.verify(token, process.env.REFRESH_TOKEN_SECRET!) as any;
+      this._signer.verify(token, secret) as any;
     return payload.userID!;
   }
 }

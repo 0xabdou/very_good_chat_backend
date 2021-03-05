@@ -7,7 +7,6 @@ import {createWriteStream} from "fs";
 import isAuthenticated from "../../auth/graphql/is-authenticated";
 import Context from "../../../context";
 
-
 const validators = {
   validateUsername(username: string) {
     if (username.length == 0) return 'A username is required';
@@ -31,12 +30,7 @@ export class UserResolver {
     console.log('ME UID: ', context.userID);
     const user = await context.dataSources.userDS.getUser(context.userID!);
     if (!user) throw new ApolloError("This user has to register", "USER_NOT_FOUND");
-    if (user.photoURL) {
-      const req = context.req;
-      const PORT = process.env.PORT ?? 4000;
-      const port = (PORT == '80' || PORT == '443') ? '' : `:${PORT}`;
-      user.photoURL = `${req.protocol}://${req.hostname}${port}/${user.photoURL}`;
-    }
+    this._completePhotoUrl(user, context);
     return user;
   }
 
@@ -89,12 +83,7 @@ export class UserResolver {
       name: creation.name ?? undefined,
       photoURL: photoPath,
     });
-    if (user.photoURL) {
-      const req = context.req;
-      const PORT = process.env.PORT ?? 4000;
-      const port = (PORT == '80' || PORT == '443') ? '' : `:${PORT}`;
-      user.photoURL = `${req.protocol}://${req.hostname}${port}/${photoPath}`;
-    }
+    this._completePhotoUrl(user, context);
     return user;
   }
 
@@ -105,5 +94,14 @@ export class UserResolver {
     @Arg('username') username: string
   ): Promise<boolean> {
     return context.dataSources.userDS.isUsernameTaken(username);
+  }
+
+  _completePhotoUrl(user: User, context: Context) {
+    if (user.photoURL) {
+      const req = context.req;
+      const PORT = process.env.PORT ?? 4000;
+      const port = (PORT == '80' || PORT == '443') ? '' : `:${PORT}`;
+      user.photoURL = `${req.protocol}://${req.hostname}${port}/${user.photoURL}`;
+    }
   }
 }
