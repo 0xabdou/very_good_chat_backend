@@ -1,9 +1,12 @@
 import {Signer} from "./signer";
+import {inject, injectable} from "inversify";
+import TYPES from "../../../service-locator/types";
 
+@injectable()
 export class Tokens {
   private _signer: Signer;
 
-  constructor(signer: Signer) {
+  constructor(@inject(TYPES.signer) signer: Signer) {
     this._signer = signer;
   }
 

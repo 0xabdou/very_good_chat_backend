@@ -11,6 +11,7 @@
     "lib": [
       "esnext",
       "esnext.asynciterable",
+      "dom"
     ],
     /* Specify library files to be included in the compilation. */
     // "allowJs": true,                       /* Allow javascript files to be compiled. */

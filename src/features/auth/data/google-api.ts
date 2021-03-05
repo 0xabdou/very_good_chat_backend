@@ -1,9 +1,12 @@
 import {AxiosStatic} from "axios";
+import {inject, injectable} from "inversify";
+import TYPES from "../../../service-locator/types";
 
+@injectable()
 export default class GoogleAPI {
   private _axios: AxiosStatic;
 
-  constructor(axios: AxiosStatic) {
+  constructor(@inject(TYPES.Axios) axios: AxiosStatic) {
     this._axios = axios;
   }
 

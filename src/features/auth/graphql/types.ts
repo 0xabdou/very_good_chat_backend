@@ -1,4 +1,4 @@
-import {Field, ObjectType} from "type-graphql";
+import {Field, InputType, ObjectType} from "type-graphql";
 
 @ObjectType()
 export class AuthUser {
@@ -14,5 +14,11 @@ export class LoginResponse {
   accessToken!: string;
   @Field()
   authUser!: AuthUser;
+}
+
+@InputType()
+export class LoginInput {
+  @Field()
+  token!: String;
 }
 

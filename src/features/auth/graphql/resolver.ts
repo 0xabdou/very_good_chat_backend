@@ -1,14 +1,8 @@
-import {Arg, Ctx, Field, InputType, Mutation, Resolver,} from "type-graphql";
+import {Arg, Ctx, Mutation, Resolver,} from "type-graphql";
 import {AuthenticationError} from 'apollo-server-express';
 
-import {Context} from "../../../index";
-import {LoginResponse} from "./types";
-
-@InputType()
-class LoginInput {
-  @Field()
-  token!: String;
-}
+import {LoginInput, LoginResponse} from "./types";
+import Context from "../../../context";
 
 @Resolver()
 export class AuthResolver {

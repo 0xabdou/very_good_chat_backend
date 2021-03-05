@@ -1,10 +1,11 @@
 import {Arg, Ctx, Mutation, Query, Resolver, UseMiddleware} from "type-graphql";
 import {User, UserCreation} from "./types";
-import {Context} from "../../../index";
-import * as path from "path";import {ApolloError, UserInputError} from "apollo-server-express";
+import * as path from "path";
+import {ApolloError, UserInputError} from "apollo-server-express";
 import {createWriteStream} from "fs";
 
 import isAuthenticated from "../../auth/graphql/is-authenticated";
+import Context from "../../../context";
 
 
 const validators = {

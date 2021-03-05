@@ -1,9 +1,12 @@
 import {PrismaClient} from "@prisma/client";
+import {inject, injectable} from "inversify";
+import TYPES from "../../../service-locator/types";
 
+@injectable()
 export default class AuthDataSource {
   private _prisma: PrismaClient;
 
-  constructor(prisma: PrismaClient) {
+  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
     this._prisma = prisma;
   }
 

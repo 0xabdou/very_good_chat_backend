@@ -1,10 +1,13 @@
 import {PrismaClient} from "@prisma/client";
 import {User} from "../graphql/types";
+import {inject, injectable} from "inversify";
+import TYPES from "../../../service-locator/types";
 
+@injectable()
 export default class UserDataSource {
   private _prisma: PrismaClient;
 
-  constructor(prisma: PrismaClient) {
+  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
     this._prisma = prisma;
   }
 
