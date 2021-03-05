@@ -1,14 +1,7 @@
 import {PrismaClient} from "@prisma/client";
-import {User} from "./types";
+import {User} from "../graphql/types";
 
-type CreateUserArgs = {
-  authUserID: string,
-  username: string,
-  name?: string,
-  photoURL?: string,
-}
-
-export class UserStore {
+export default class UserDataSource {
   private _prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
@@ -44,4 +37,11 @@ export class UserStore {
       photoURL: user.photoURL ?? undefined,
     };
   }
+}
+
+export type CreateUserArgs = {
+  authUserID: string,
+  username: string,
+  name?: string,
+  photoURL?: string,
 }

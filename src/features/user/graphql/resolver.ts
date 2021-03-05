@@ -1,10 +1,10 @@
 import {Arg, Ctx, Mutation, Query, Resolver, UseMiddleware} from "type-graphql";
 import {User, UserCreation} from "./types";
-import {Context} from "../../index";
-import {isAuthenticated} from "../auth/middlewares";
-import {ApolloError, UserInputError} from "apollo-server-express";
+import {Context} from "../../../index";
+import * as path from "path";import {ApolloError, UserInputError} from "apollo-server-express";
 import {createWriteStream} from "fs";
-import * as path from "path";
+
+import isAuthenticated from "../../auth/graphql/is-authenticated";
 
 
 const validators = {
@@ -28,7 +28,7 @@ export class UserResolver {
   @UseMiddleware(isAuthenticated)
   async me(@Ctx() context: Context): Promise<User> {
     console.log('ME UID: ', context.userID);
-    const user = await context.dataSources.userStore.getUser(context.userID!);
+    const user = await context.dataSources.userDS.getUser(context.userID!);
     if (!user) throw new ApolloError("This user has to register", "USER_NOT_FOUND");
     if (user.photoURL) {
       const req = context.req;
@@ -55,7 +55,7 @@ export class UserResolver {
     }
 
     const usernameTaken = await
-      context.dataSources.userStore.isUsernameTaken(creation.username);
+      context.dataSources.userDS.isUsernameTaken(creation.username);
     if (usernameTaken)
       throw new ApolloError('Username taken', 'USERNAME_TAKEN');
 
@@ -82,7 +82,7 @@ export class UserResolver {
         );
       }
     }
-    const user = await context.dataSources.userStore.createUser({
+    const user = await context.dataSources.userDS.createUser({
       authUserID: context.userID!,
       username: creation.username,
       name: creation.name ?? undefined,
@@ -103,6 +103,6 @@ export class UserResolver {
     @Ctx() context: Context,
     @Arg('username') username: string
   ): Promise<boolean> {
-    return context.dataSources.userStore.isUsernameTaken(username);
+    return context.dataSources.userDS.isUsernameTaken(username);
   }
 }
