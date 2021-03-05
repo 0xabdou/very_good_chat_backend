@@ -22,7 +22,9 @@ export default class GoogleAPI {
         photoURL: data.picture.replace('s96-c', 's500-c'),
       };
     }
-    throw new Error("Invalid google token");
+    const error = new Error("Invalid google token");
+    error.name = 'INVALID_GOOGLE_TOKEN';
+    throw error;
   }
 }
 

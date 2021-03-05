@@ -33,7 +33,7 @@ export class Tokens {
     return this._verifyToken(token, process.env.REFRESH_TOKEN_SECRET!);
   }
 
-  _verifyToken(token: string, secret: string) {
+  private _verifyToken(token: string, secret: string) {
     const payload =
       this._signer.verify(token, secret) as any;
     return payload.userID!;
