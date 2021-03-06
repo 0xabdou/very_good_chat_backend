@@ -10,10 +10,6 @@ export default class AuthDataSource {
     this._prisma = prisma;
   }
 
-  async findAuthUserById(id: string) {
-    return this._prisma.authUser.findUnique({where: {id}});
-  }
-
   async findOrCreateAuthUser(email: string) {
     const authUser = await this._prisma.authUser.findUnique({where: {email}});
     if (authUser) return authUser;
