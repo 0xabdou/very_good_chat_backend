@@ -2,7 +2,7 @@ import {MiddlewareFn} from "type-graphql";
 import {AuthenticationError} from "apollo-server-express";
 import Context from "../../../context";
 
-const isAuthenticated: MiddlewareFn<Context> = async ({context}, next) => {
+const isAuthenticated: MiddlewareFn<Context> = ({context}, next) => {
   const authorization = context.req.headers.authorization;
   if (!authorization)
     throw new AuthenticationError('Must provide an access token');
