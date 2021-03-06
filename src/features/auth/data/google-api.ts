@@ -4,6 +4,8 @@ import TYPES from "../../../service-locator/types";
 
 @injectable()
 export default class GoogleAPI {
+  static GOOGLE_API_URL = 'https://oauth2.googleapis.com/tokeninfo?id_token=';
+
   private _axios: AxiosStatic;
 
   constructor(@inject(TYPES.Axios) axios: AxiosStatic) {
@@ -12,19 +14,14 @@ export default class GoogleAPI {
 
   async getGoogleUser(token: string): Promise<AuthProviderUser> {
     const response = await this._axios.get(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${token}`
+      `${GoogleAPI.GOOGLE_API_URL}${token}`
     );
-    if (response.status === 200) {
-      const data = response.data;
-      return {
-        email: data.email,
-        displayName: data.name,
-        photoURL: data.picture.replace('s96-c', 's500-c'),
-      };
-    }
-    const error = new Error("Invalid google token");
-    error.name = 'INVALID_GOOGLE_TOKEN';
-    throw error;
+    const data = response.data;
+    return {
+      email: data.email,
+      displayName: data.name,
+      photoURL: data.picture.replace('s96-c', 's500-c'),
+    };
   }
 }
 

@@ -1,5 +1,5 @@
 import {Arg, Ctx, Mutation, Resolver,} from "type-graphql";
-import {AuthenticationError} from 'apollo-server-express';
+import {ApolloError} from 'apollo-server-express';
 
 import {LoginInput, LoginResponse} from "./types";
 import Context from "../../../context";
@@ -39,8 +39,12 @@ export class AuthResolver {
         },
       };
     } catch (e) {
-      console.log(e);
-      throw new AuthenticationError("Couldn't authenticate with google");
+      if (e.response) {
+        console.log('AuthResolver THREW: ', e.response.data)
+      } else {
+        console.log(e);
+      }
+      throw new ApolloError("Invalid google id token", 'INVALID_TOKEN');
     }
   }
 }
