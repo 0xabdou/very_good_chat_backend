@@ -3,6 +3,7 @@ import {ApolloError} from 'apollo-server-express';
 
 import {LoginInput, LoginResponse} from "./types";
 import Context from "../../../context";
+import axios from "axios";
 
 @Resolver()
 export class AuthResolver {
@@ -39,13 +40,16 @@ export class AuthResolver {
         },
       };
     } catch (e) {
-      if (e.response) {
-        console.log('AuthResolver THREW: ', e.response.data)
-      } else {
-        console.log(e);
+      if (axios.isAxiosError(e) && e.response) {
+        console.log('AuthResolver THREW: ', e.response.data);
+        throw new ApolloError("Invalid google id token", 'INVALID_TOKEN');
       }
-      throw new ApolloError("Invalid google id token", 'INVALID_TOKEN');
+        console.log(e);
+        throw new ApolloError(
+          "Something wrong happened",
+          'INTERNAL_SERVER_ERROR'
+        );
+      }
     }
   }
-}
 
