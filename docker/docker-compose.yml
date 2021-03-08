@@ -1,0 +1,21 @@
+services:
+  database:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=pgpassword
+      - POSTGRES_USER=pguser
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+  test_databas:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=pgpassword
+      - POSTGRES_USER=pguser
+    expose:
+      - 5431
+    ports:
+      - 5431:5431
