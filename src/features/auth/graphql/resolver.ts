@@ -4,7 +4,7 @@ import {ApolloError} from 'apollo-server-express';
 import {LoginInput, LoginResponse} from "./types";
 import Context from "../../../shared/context";
 import axios from "axios";
-import {returnsLoginResponse} from "../../../shared/return-types";
+import {returnsLoginResponse} from "../../../shared/graphql/return-types";
 
 @Resolver()
 export class AuthResolver {

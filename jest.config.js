@@ -5,7 +5,6 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
     'src/features/**/*',
-    'src/shared/middlewares/*',
-    'src/shared/return-types.ts',
+    'src/shared/graphql/**/*',
   ],
 };
