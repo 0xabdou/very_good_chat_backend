@@ -31,7 +31,7 @@ export default class UserDataSource {
     return UserDataSource._getGraphQLUser(user);
   }
 
-  private static _getGraphQLUser(user: PrismaUser) {
+  static _getGraphQLUser(user: PrismaUser) {
     return {
       id: user.authUserID,
       username: user.username,
