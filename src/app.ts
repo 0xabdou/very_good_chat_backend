@@ -1,7 +1,7 @@
 import container, {initContainer} from "./service-locator/container";
 import express from "express";
 import cors from "cors";
-import corsOptions from "./cors";
+import corsOptions from "./app/cors";
 import cookieParser from "cookie-parser";
 import {graphqlUploadExpress} from "graphql-upload";
 import authRouter from "./features/auth/rest/router";
@@ -9,9 +9,9 @@ import TYPES from "./service-locator/types";
 import {buildSchema} from "type-graphql";
 import {AuthResolver} from "./features/auth/graphql/resolver";
 import {UserResolver} from "./features/user/graphql/resolver";
-import errorInterceptor from "./middlewares/error-interceptor";
+import errorInterceptor from "./app/middlewares/error-interceptor";
 import {ApolloServer, GetMiddlewareOptions} from "apollo-server-express";
-import Context, {ContextDataSources} from "./context";
+import Context, {ContextDataSources} from "./app/context";
 
 const createApp = async (dataSources: ContextDataSources) => {
   // Initialize IoC container

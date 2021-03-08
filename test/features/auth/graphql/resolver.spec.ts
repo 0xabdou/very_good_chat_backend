@@ -1,5 +1,5 @@
 import {AuthResolver} from "../../../../src/features/auth/graphql/resolver";
-import Context from '../../../../src/context';
+import Context from '../../../../src/shared/context';
 import {
   anything,
   deepEqual,

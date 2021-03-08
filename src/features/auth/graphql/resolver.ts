@@ -2,9 +2,9 @@ import {Arg, Ctx, Mutation, Resolver,} from "type-graphql";
 import {ApolloError} from 'apollo-server-express';
 
 import {LoginInput, LoginResponse} from "./types";
-import Context from "../../../context";
+import Context from "../../../shared/context";
 import axios from "axios";
-import {returnsLoginResponse} from "../../../return-types";
+import {returnsLoginResponse} from "../../../shared/return-types";
 
 @Resolver()
 export class AuthResolver {

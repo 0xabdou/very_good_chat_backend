@@ -3,7 +3,7 @@ import createApp from "../../../src/app";
 import container, {initContainer} from "../../../src/service-locator/container";
 import TYPES from "../../../src/service-locator/types";
 import request from 'supertest';
-import {ContextDataSources} from "../../../src/context";
+import {ContextDataSources} from "../../../src/app/context";
 import GoogleAPI from "../../../src/features/auth/data/google-api";
 
 /**

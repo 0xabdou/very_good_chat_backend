@@ -5,7 +5,7 @@ import {ApolloError, UserInputError} from "apollo-server-express";
 import {createWriteStream} from "fs";
 
 import isAuthenticated from "../../auth/graphql/is-authenticated";
-import Context from "../../../context";
+import Context from "../../../shared/context";
 
 const validators = {
   validateUsername(username: string) {

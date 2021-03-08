@@ -5,7 +5,7 @@ import {Tokens} from "../features/auth/data/tokens";
 import signer, {Signer} from "../features/auth/data/signer";
 import {PrismaClient} from "@prisma/client";
 import AuthDataSource from "../features/auth/data/auth-data-source";
-import {ContextDataSources} from "../context";
+import {ContextDataSources} from "../app/context";
 import axios, {AxiosStatic} from "axios";
 import UserDataSource from "../features/user/data/user-data-source";
 

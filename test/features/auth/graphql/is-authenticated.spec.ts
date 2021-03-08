@@ -1,4 +1,4 @@
-import Context from '../../../../src/context';
+import Context from '../../../../src/shared/context';
 import {anything, instance, mock, resetCalls, verify, when} from "ts-mockito";
 import {Tokens} from "../../../../src/features/auth/data/tokens";
 import isAuthenticated

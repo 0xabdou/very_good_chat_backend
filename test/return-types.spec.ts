@@ -1,4 +1,4 @@
-import {returnsLoginResponse, returnsString} from "../src/return-types";
+import {returnsLoginResponse, returnsString} from "../src/shared/return-types";
 import {LoginResponse} from "../src/features/auth/graphql/types";
 
 test('returnsString', () => {
