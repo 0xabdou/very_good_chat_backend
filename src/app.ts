@@ -47,7 +47,6 @@ const createApp = async (dataSources: ContextDataSources) => {
     cors: corsOptions as GetMiddlewareOptions['cors'],
   });
   return app;
-
 }
 
 export default createApp;
