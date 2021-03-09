@@ -15,14 +15,14 @@ export class AuthResolver {
     @Ctx() context: Context
   ): Promise<LoginResponse> {
     try {
-      const authProviderUser = await context
+      const authProviderUser = await context.toolBox
         .dataSources.googleAPI.getGoogleUser(loginInput.token.toString());
-      const authUser = await context
+      const authUser = await context.toolBox
         .dataSources.authDS.findOrCreateAuthUser(authProviderUser.email);
-      const accessToken =
-        context.dataSources.tokens.generateAccessToken(authUser.id);
-      const refreshToken =
-        context.dataSources.tokens.generateRefreshToken(authUser.id);
+      const accessToken = context.toolBox
+        .dataSources.tokens.generateAccessToken(authUser.id);
+      const refreshToken = context.toolBox.
+        dataSources.tokens.generateRefreshToken(authUser.id);
       context.res.cookie(
         'veryGoodCookie',
         refreshToken,

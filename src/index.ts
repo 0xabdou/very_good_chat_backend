@@ -5,8 +5,8 @@ import TYPES from "./service-locator/types";
 
 const bootstrap = async () => {
   await initContainer();
-  return createApp(container.get(TYPES.ContextDataSources));
-}
+  return createApp(container.get(TYPES.ToolBox));
+};
 
 bootstrap().then(app => {
   const port = process.env.PORT || 4000;

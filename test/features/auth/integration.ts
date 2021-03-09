@@ -16,7 +16,7 @@ const config: any = {};
 beforeAll(async (done) => {
   await initContainer();
   const dataSources =
-    container.get<ContextDataSources>(TYPES.ContextDataSources);
+    container.get<ContextDataSources>(TYPES.DataSources);
   dataSources.googleAPI = {} as GoogleAPI;
   config.app = await createApp(dataSources);
   await container.get<PrismaClient>(TYPES.PrismaClient).$connect();

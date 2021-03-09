@@ -1,7 +1,6 @@
-import container, {initContainer} from "./service-locator/container";
+import container from "./service-locator/container";
 import express from "express";
 import cors from "cors";
-import corsOptions from "./app/cors";
 import cookieParser from "cookie-parser";
 import {graphqlUploadExpress} from "graphql-upload";
 import authRouter from "./features/auth/rest/router";
@@ -9,14 +8,12 @@ import TYPES from "./service-locator/types";
 import {buildSchema} from "type-graphql";
 import {AuthResolver} from "./features/auth/graphql/resolver";
 import {UserResolver} from "./features/user/graphql/resolver";
-import errorInterceptor from "./app/middlewares/error-interceptor";
 import {ApolloServer, GetMiddlewareOptions} from "apollo-server-express";
-import Context, {ContextDataSources} from "./app/context";
+import errorInterceptor from "./shared/graphql/middlewares/error-interceptor";
+import Context, {ToolBox} from "./shared/context";
+import corsOptions from "./shared/cors";
 
-const createApp = async (dataSources: ContextDataSources) => {
-  // Initialize IoC container
-  await initContainer();
-
+const createApp = async (toolBox: ToolBox) => {
   const app = express();
   const CORS = cors(corsOptions);
 
@@ -38,7 +35,7 @@ const createApp = async (dataSources: ContextDataSources) => {
       return {
         req,
         res,
-        dataSources,
+        toolBox
       };
     }
   });
@@ -47,6 +44,6 @@ const createApp = async (dataSources: ContextDataSources) => {
     cors: corsOptions as GetMiddlewareOptions['cors'],
   });
   return app;
-}
+};
 
 export default createApp;

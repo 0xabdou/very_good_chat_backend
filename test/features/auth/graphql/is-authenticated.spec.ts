@@ -17,7 +17,9 @@ const getResolverData = (authorization?: string) => {
   return {
     context: {
       req: {headers: {authorization}},
-      dataSources: {tokens: instance(MockTokens)}
+      toolBox: {
+        dataSources: {tokens: instance(MockTokens)}
+      }
     } as Context
   } as ResolverData<Context>;
 };

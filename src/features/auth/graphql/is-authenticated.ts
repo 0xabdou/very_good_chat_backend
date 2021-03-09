@@ -11,7 +11,8 @@ const isAuthenticated: MiddlewareFn<Context> = ({context}, next) => {
     throw new AuthenticationError('Must provide an access token');
   const token = segments[1];
   try {
-    context.userID = context.dataSources.tokens.verifyAccessToken(token);
+    context.userID =
+      context.toolBox.dataSources.tokens.verifyAccessToken(token);
   } catch (e) {
     console.log(e);
     throw new AuthenticationError('Invalid access token');

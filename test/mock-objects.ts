@@ -11,7 +11,7 @@ export const mockPrismaAuthUser: AuthUser = {
 export const mockPrismaUser: User = {
   username: 'username',
   name: null,
-  photoURL: null,
+  photoURL: '/storage/auth_user_id_pp.png',
   authUserID: 'auth_user_id',
 };
 

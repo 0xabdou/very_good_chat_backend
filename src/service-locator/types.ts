@@ -1,4 +1,5 @@
 const TYPES = {
+  ToolBox: Symbol('ToolBox'),
   GoogleAPI: Symbol('GoogleAPI'),
   signer: Symbol('signer'),
   Tokens: Symbol('Tokens'),
@@ -6,7 +7,9 @@ const TYPES = {
   Axios: Symbol('Axios'),
   AuthDataSource: Symbol('AuthDataSource'),
   UserDataSource: Symbol('UserDataSource'),
-  ContextDataSources: Symbol('ContextDataSources'),
+  DataSources: Symbol('DataSources'),
+  Validators: Symbol('Validators'),
+  Utils: Symbol('Utils'),
 };
 
 export default TYPES;

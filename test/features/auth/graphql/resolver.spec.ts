@@ -27,11 +27,14 @@ const context = {
   req: {},
   res: instance(MockResponse),
   userID: 'userID',
-  dataSources: {
-    googleAPI: instance(MockGoogleApi),
-    authDS: instance(MockAuthDS),
-    tokens: instance(MockTokens),
+  toolBox: {
+    dataSources: {
+      googleAPI: instance(MockGoogleApi),
+      authDS: instance(MockAuthDS),
+      tokens: instance(MockTokens),
+    }
   }
+
 } as Context;
 
 const resolver = new AuthResolver();

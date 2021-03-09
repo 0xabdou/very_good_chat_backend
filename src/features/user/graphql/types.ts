@@ -20,5 +20,5 @@ export class UserCreation {
   @Field({nullable: true})
   name?: string;
   @Field(() => GraphQLUpload, {nullable: true})
-  photo?: FileUpload;
+  photo?: Promise<FileUpload>;
 }
