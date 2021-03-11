@@ -15,7 +15,11 @@ import {UserValidators} from "../../../../src/features/user/graphql/validators";
 import FileUtils from "../../../../src/shared/utils/file-utils";
 import {UserResolver} from "../../../../src/features/user/graphql/resolver";
 import {mockGraphQLUser} from "../../../mock-objects";
-import {User, UserCreation} from "../../../../src/features/user/graphql/types";
+import {
+  User,
+  UserCreation,
+  UserUpdate
+} from "../../../../src/features/user/graphql/types";
 import {FileUpload} from "graphql-upload";
 
 const MockUserDataSource = mock<UserDataSource>();
@@ -231,6 +235,142 @@ describe('register', () => {
       username: creation.username,
       name: creation.name ?? undefined,
       photoURL: photoURL,
+    }))).once();
+    expect(result).toStrictEqual({
+      ...mockGraphQLUser,
+      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
+    });
+  });
+});
+
+describe('updateUser', () => {
+  const usernameError = 'YEP';
+  const nameError = 'NOP';
+  const photoURL = '/photo/url';
+  const update: UserUpdate = {
+    username: 'username',
+    name: 'name name',
+    photo: {} as Promise<FileUpload>
+  };
+
+  const act = () => resolver.updateUser(context, update);
+  const getThrownError = async () => {
+    try {
+      await act();
+    } catch (e) {
+      return e;
+    }
+  };
+
+  beforeEach(() => {
+    reset(MockUserValidators);
+    when(MockUserDataSource.isUsernameTaken(anything())).thenResolve(false);
+    when(MockFileUtils.saveProfilePhoto(anything())).thenResolve(photoURL);
+    when(MockUserDataSource.updateUser(anything())).thenResolve(mockGraphQLUser);
+  });
+
+  it('should throw input error if the username is invalid', async () => {
+    // arrange
+    when(MockUserValidators.validateUsername(anything()))
+      .thenReturn(usernameError);
+    // act
+    const error = await getThrownError();
+    // assert
+    verify(MockUserValidators.validateUsername(update.username!)).once();
+    expect(error.extensions.code).toBe('BAD_USER_INPUT');
+    expect(error.extensions.username).toBe(usernameError);
+  });
+
+  it('should throw USERNAME_TAKEN error if the username is taken', async () => {
+    // arrange
+    when(MockUserDataSource.isUsernameTaken(anything()))
+      .thenResolve(true);
+    // act
+    const error = await getThrownError();
+    // assert
+    verify(MockUserValidators.validateUsername(update.username!)).once();
+    expect(error.extensions.code).toBe('USERNAME_TAKEN');
+  });
+
+  it('should should throw input error if the name is invalid', async () => {
+    // arrange
+    when(MockUserValidators.validateName(anything()))
+      .thenReturn(nameError);
+    // act
+    const error = await getThrownError();
+    // assert
+    verify(MockUserValidators.validateName(update.name!)).once();
+    expect(error.extensions.code).toBe('BAD_USER_INPUT');
+    expect(error.extensions.name).toBe(nameError);
+  });
+
+  it('should should throw input error if the name is invalid', async () => {
+    // arrange
+    when(MockUserValidators.validateName(anything()))
+      .thenReturn(nameError);
+    // act
+    const error = await getThrownError();
+    // assert
+    verify(MockUserValidators.validateName(update.name!)).once();
+    expect(error.extensions.code).toBe('BAD_USER_INPUT');
+    expect(error.extensions.name).toBe(nameError);
+  });
+
+  it('should not save photo if it is not sent', async () => {
+    // arrange
+    const noPhotoUpdate = {
+      ...update,
+      photo: undefined,
+    };
+    // act
+    const result = await resolver.updateUser(context, noPhotoUpdate);
+    // assert
+    verify(MockFileUtils.saveProfilePhoto(anything())).never();
+    expect(result).toStrictEqual({
+      ...mockGraphQLUser,
+      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
+    });
+  });
+
+  it('should throw an error if the sent photo failed to save', async () => {
+    // arrange
+    when(MockFileUtils.saveProfilePhoto(anything()))
+      .thenReject(new Error('Failed to save'));
+    // act
+    const error = await getThrownError();
+    // assert
+    expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
+  });
+
+  it('should save photo if it is sent', async () => {
+    // arrange
+    when(MockFileUtils.saveProfilePhoto(anything()))
+      .thenResolve(photoURL);
+    // act
+    await act();
+    // assert
+    verify(MockFileUtils.saveProfilePhoto(deepEqual({
+      userID: userID,
+      photo: update.photo!,
+    }))).once();
+  });
+
+  it('should update the user and return it if al goes well', async () => {
+    // arrange
+    const up: UserUpdate = {
+      ...update,
+      deletePhoto: true,
+    };
+    // act
+    const result = await resolver.updateUser(context, up);
+    // assert
+    verify(MockUserDataSource.updateUser(deepEqual({
+      authUserID: userID,
+      username: up.username,
+      name: up.name,
+      deleteName: !!up.deleteName,
+      photoURL: undefined,
+      deletePhoto: !!up.deletePhoto,
     }))).once();
     expect(result).toStrictEqual({
       ...mockGraphQLUser,

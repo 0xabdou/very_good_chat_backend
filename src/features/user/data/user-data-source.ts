@@ -31,6 +31,18 @@ export default class UserDataSource {
     return UserDataSource._getGraphQLUser(user);
   }
 
+  async updateUser(args: UpdateUserArgs) : Promise<User> {
+    const user = await this._prisma.user.update({
+      where: {authUserID: args.authUserID},
+      data: {
+        username:  args.username,
+        name: args.deleteName ? null: args.name,
+        photoURL: args.deletePhoto ? null : args.photoURL,
+      },
+    });
+    return UserDataSource._getGraphQLUser(user);
+  }
+
   static _getGraphQLUser(user: PrismaUser) {
     return {
       id: user.authUserID,
@@ -46,4 +58,13 @@ export type CreateUserArgs = {
   username: string,
   name?: string,
   photoURL?: string,
+}
+
+export type UpdateUserArgs = {
+  authUserID: string,
+  username?: string,
+  name?: string,
+  deleteName?: boolean,
+  photoURL?: string,
+  deletePhoto?: boolean
 }

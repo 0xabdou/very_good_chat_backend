@@ -8,8 +8,7 @@ import {
   when
 } from "ts-mockito";
 import {Prisma, PrismaClient} from "@prisma/client";
-import UserDataSource
-  from "../../../../src/features/user/data/user-data-source";
+import UserDataSource, {UpdateUserArgs} from "../../../../src/features/user/data/user-data-source";
 import {
   mockCreateUserArgs,
   mockGraphQLUser,
@@ -94,6 +93,30 @@ describe('createUser', () => {
     verify(MockUserDelegate.create(
       deepEqual({data: mockCreateUserArgs}))
     ).once();
+    expect(result).toStrictEqual(mockGraphQLUser);
+  });
+});
+
+describe('updateUser', () => {
+  it('should update and return the updated user', async () => {
+    // arrange
+    const updates: UpdateUserArgs = {
+      authUserID: 'userID',
+      username: 'userName',
+      deletePhoto: true,
+    };
+    when(MockUserDelegate.update(anything())).thenResolve(mockPrismaUser);
+    // act
+    const result = await userDS.updateUser(updates);
+    // assert
+    verify(MockUserDelegate.update(deepEqual({
+      where: {authUserID: updates.authUserID},
+      data: {
+        username: updates.username,
+        name: undefined,
+        photoURL: null,
+      },
+    }))).once();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
 });

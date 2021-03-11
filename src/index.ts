@@ -5,10 +5,7 @@ import TYPES from "./service-locator/types";
 
 const bootstrap = async () => {
   await initContainer();
-  return createApp(container.get(TYPES.ToolBox));
-};
-
-bootstrap().then(app => {
+  const app = await createApp(container.get(TYPES.ToolBox));
   const port = process.env.PORT || 4000;
   app.listen(port, () => {
     console.log(`
@@ -16,5 +13,6 @@ bootstrap().then(app => {
     🎉 Listening on port ${port}.
   `);
   });
-});
+};
 
+void bootstrap();

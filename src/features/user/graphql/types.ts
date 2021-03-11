@@ -22,3 +22,17 @@ export class UserCreation {
   @Field(() => GraphQLUpload, {nullable: true})
   photo?: Promise<FileUpload>;
 }
+
+@InputType()
+export class UserUpdate {
+  @Field({nullable: true})
+  username?: string;
+  @Field({nullable: true})
+  name?: string;
+  @Field({nullable: true})
+  deleteName?: Boolean;
+  @Field(() => GraphQLUpload, {nullable: true})
+  photo?: Promise<FileUpload>;
+  @Field({nullable: true})
+  deletePhoto?: Boolean;
+}
