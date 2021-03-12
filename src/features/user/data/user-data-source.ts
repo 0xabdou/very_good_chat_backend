@@ -43,7 +43,23 @@ export default class UserDataSource {
     return UserDataSource._getGraphQLUser(user);
   }
 
-  static _getGraphQLUser(user: PrismaUser) {
+  async findUsers(searchQuery: string) : Promise<User[]>{
+    const users = await this._prisma.user.findMany({
+      where: {
+        OR: [
+          {
+            username: {contains: searchQuery}
+          },
+          {
+            name: {contains: searchQuery}
+          }
+        ]
+      }
+    });
+    return users.map(u => UserDataSource._getGraphQLUser(u));
+  }
+
+  static _getGraphQLUser(user: PrismaUser) : User{
     return {
       id: user.authUserID,
       username: user.username,

@@ -6,4 +6,5 @@ export const returnsString = () => String;
 export const returnsBoolean = () => Boolean;
 export const returnsLoginResponse = () => LoginResponse;
 export const returnsUser = () => User;
+export const returnsListOfUsers= () => [User];
 export const ofTypeGraphQLUpload = () => GraphQLUpload;

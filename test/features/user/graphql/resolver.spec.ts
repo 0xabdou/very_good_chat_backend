@@ -392,3 +392,17 @@ describe('checkUsernameExistence', () => {
     verify(MockUserDataSource.isUsernameTaken(username)).once();
   });
 });
+
+describe('findUsers', () => {
+  it('should forward the call to userDS.findUsers()', ()=> {
+    // arrange
+    const promise = new Promise<User[]>(r => r([mockGraphQLUser]));
+    const searchQuery = 'search query';
+    when(MockUserDataSource.findUsers(anything())).thenReturn(promise);
+    // act
+    const result = resolver.findUsers(context, searchQuery);
+    // assert
+    expect(result).toBe(promise);
+    verify(MockUserDataSource.findUsers(searchQuery)).once();
+  });
+});

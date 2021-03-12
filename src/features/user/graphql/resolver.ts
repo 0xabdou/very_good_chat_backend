@@ -5,7 +5,7 @@ import {ApolloError, UserInputError} from "apollo-server-express";
 import isAuthenticated from "../../auth/graphql/is-authenticated";
 import Context from "../../../shared/context";
 import {
-  returnsBoolean,
+  returnsBoolean, returnsListOfUsers,
   returnsUser
 } from "../../../shared/graphql/return-types";
 import {FileUpload} from "graphql-upload";
@@ -108,6 +108,15 @@ export class UserResolver {
     @Arg('username') username: string
   ): Promise<boolean> {
     return context.toolBox.dataSources.userDS.isUsernameTaken(username);
+  }
+
+  @Query(returnsListOfUsers)
+  @UseMiddleware(isAuthenticated)
+  findUsers(
+    @Ctx() context: Context,
+    @Arg('searchQuery') searchQuery: string
+  ) : Promise<User[]> {
+    return context.toolBox.dataSources.userDS.findUsers(searchQuery);
   }
 
   async _savePhoto(context: Context, photo: Promise<FileUpload>) {

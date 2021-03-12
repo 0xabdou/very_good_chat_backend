@@ -121,6 +121,26 @@ describe('updateUser', () => {
   });
 });
 
+describe('findUsers', () => {
+  it('should find users with the search query', async () => {
+    // arrange
+    when(MockUserDelegate.findMany(anything())).thenResolve([mockPrismaUser]);
+    const searchQuery = 'searchQuery';
+    // act
+    const result = await userDS.findUsers(searchQuery);
+    // assert
+    expect(result).toEqual([UserDataSource._getGraphQLUser(mockPrismaUser)]);
+    verify(MockUserDelegate.findMany(deepEqual({
+      where: {
+        OR: [
+          {username: {contains: searchQuery}},
+          {name: {contains: searchQuery}}
+        ]
+      }
+    }))).once();
+  });
+});
+
 describe('_getGraphQLUser', () => {
   it('should return the corresponding gql user', () => {
     // act
