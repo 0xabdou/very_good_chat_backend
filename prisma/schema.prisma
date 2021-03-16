@@ -14,6 +14,8 @@ model AuthUser {
     id              String @id @default(uuid())
     email           String @unique
     user            User?
+    friends1        Friend[] @relation(name: "friends1")
+    friends2        Friend[] @relation(name: "friends2")
     @@map("auth_users")
 }
 
@@ -25,4 +27,17 @@ model User {
     authUserID  String @unique @map("auth_user")
 
     @@map("users")
+}
+
+model Friend {
+   id           Int @id @default(autoincrement())
+   user1        AuthUser @relation(name: "friends1", fields: [user1ID], references: [id])
+   user1ID      String @map("user1_id")
+   user2        AuthUser @relation(name: "friends2", fields: [user2ID], references: [id])
+   user2ID      String @map("user2_id")
+   confirmed    Boolean @default(false)
+   date         DateTime @updatedAt
+
+   @@map("friends")
+   @@unique([user1ID, user2ID])
 }

@@ -2,6 +2,7 @@ import {CorsOptions} from "cors";
 
 const whitelist = [
   "http://localhost:3000",
+  "http://localhost:5000",
   'https://studio.apollographql.com',
 ];
 

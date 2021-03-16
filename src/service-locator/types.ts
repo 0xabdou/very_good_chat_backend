@@ -7,6 +7,7 @@ const TYPES = {
   Axios: Symbol('Axios'),
   AuthDataSource: Symbol('AuthDataSource'),
   UserDataSource: Symbol('UserDataSource'),
+  FriendDataSource: Symbol('FriendDataSource'),
   DataSources: Symbol('DataSources'),
   Validators: Symbol('Validators'),
   Utils: Symbol('Utils'),

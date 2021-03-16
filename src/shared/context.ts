@@ -5,6 +5,7 @@ import {Tokens} from "../features/auth/data/tokens";
 import UserDataSource from "../features/user/data/user-data-source";
 import {UserValidators} from "../features/user/graphql/validators";
 import FileUtils from "./utils/file-utils";
+import FriendDataSource from "../features/friend/data/friend-data-source";
 
 type Context = {
   req: Request,
@@ -20,9 +21,10 @@ export type ToolBox = {
 
 export type DataSources = {
   googleAPI: GoogleAPI,
-  authDS: AuthDataSource,
   tokens: Tokens,
   userDS: UserDataSource,
+  authDS: AuthDataSource,
+  friendDS: FriendDataSource,
 }
 
 export type Validators = {

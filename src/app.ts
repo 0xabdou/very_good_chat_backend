@@ -12,6 +12,7 @@ import {ApolloServer, GetMiddlewareOptions} from "apollo-server-express";
 import errorInterceptor from "./shared/graphql/middlewares/error-interceptor";
 import Context, {ToolBox} from "./shared/context";
 import corsOptions from "./shared/cors";
+import FriendResolver from "./features/friend/graphql/resolver";
 
 const createApp = async (toolBox: ToolBox) => {
   const app = express();
@@ -25,8 +26,9 @@ const createApp = async (toolBox: ToolBox) => {
 
   // GraphQL server stuff
   const schema = await buildSchema({
-    resolvers: [AuthResolver, UserResolver],
+    resolvers: [AuthResolver, UserResolver, FriendResolver],
     globalMiddlewares: [errorInterceptor],
+    dateScalarMode: 'timestamp'
   });
   const server = new ApolloServer({
     schema,

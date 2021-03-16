@@ -1,0 +1,30 @@
+import {Field, ObjectType, registerEnumType} from "type-graphql";
+import {User} from "../../user/graphql/types";
+import {ofTypeFriendshipStatus} from "../../../shared/graphql/return-types";
+
+export enum FriendshipStatus {
+  STRANGERS = 'STRANGERS',
+  FRIENDS = 'FRIENDS',
+  REQUEST_SENT = 'REQUEST_SENT',
+  REQUEST_RECEIVED = 'REQUEST_RECEIVED',
+  BLOCKED = 'BLOCKED',
+  BLOCKING = 'BLOCKING'
+}
+
+registerEnumType(FriendshipStatus, {name: 'FriendshipStatus'});
+
+@ObjectType()
+export class Friendship {
+  @Field(ofTypeFriendshipStatus)
+  status!: FriendshipStatus;
+  @Field()
+  date?: Date;
+}
+
+@ObjectType()
+export class FriendshipInfo {
+  @Field()
+  user!: User;
+  @Field()
+  friendship!: Friendship;
+}

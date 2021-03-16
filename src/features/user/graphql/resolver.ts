@@ -112,11 +112,16 @@ export class UserResolver {
 
   @Query(returnsListOfUsers)
   @UseMiddleware(isAuthenticated)
-  findUsers(
+  async findUsers(
     @Ctx() context: Context,
     @Arg('searchQuery') searchQuery: string
   ) : Promise<User[]> {
-    return context.toolBox.dataSources.userDS.findUsers(searchQuery);
+    const users = await context.toolBox.dataSources.userDS.findUsers(searchQuery);
+    return users.map(u => {
+      return {
+        ...u,
+        photoURL: this._completePhotoUrl(u.photoURL, context)};
+    });
   }
 
   async _savePhoto(context: Context, photo: Promise<FileUpload>) {

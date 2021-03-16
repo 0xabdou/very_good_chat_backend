@@ -394,15 +394,18 @@ describe('checkUsernameExistence', () => {
 });
 
 describe('findUsers', () => {
-  it('should forward the call to userDS.findUsers()', ()=> {
+  it('should return the found users', async ()=> {
     // arrange
     const promise = new Promise<User[]>(r => r([mockGraphQLUser]));
     const searchQuery = 'search query';
     when(MockUserDataSource.findUsers(anything())).thenReturn(promise);
     // act
-    const result = resolver.findUsers(context, searchQuery);
+    const result = await resolver.findUsers(context, searchQuery);
     // assert
-    expect(result).toBe(promise);
+    expect(result).toStrictEqual([{
+      ...mockGraphQLUser,
+      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
+    }]);
     verify(MockUserDataSource.findUsers(searchQuery)).once();
   });
 });
