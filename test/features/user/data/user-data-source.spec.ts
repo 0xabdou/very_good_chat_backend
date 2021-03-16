@@ -14,6 +14,7 @@ import {
   mockGraphQLUser,
   mockPrismaUser
 } from "../../../mock-objects";
+import {GerUserArgs} from "../../../../src/features/user/graphql/types";
 
 const MockPrismaClient = mock<PrismaClient>();
 const MockUserDelegate = mock<Prisma.UserDelegate<any>>();
@@ -29,28 +30,67 @@ beforeEach(() => {
 });
 
 describe('getUser', () => {
-  const userID = 'userID';
-  it('should return null if no user exists with that id', async () => {
+  it('should return null if username and id are both undefined', async () => {
     // arrange
+    const args: GerUserArgs = {};
+    // act
+    const result = await userDS.getUser(args);
+    // assert
+    expect(result).toBeNull();
+    verify(MockUserDelegate.findUnique(anything())).never();
+  });
+
+  it('should find the user by username if it was defined', async () => {
+    // arrange
+    const args: GerUserArgs = {username: 'usernammmme'};
+    // act
+    await userDS.getUser(args);
+    // assert
+    verify(MockUserDelegate.findUnique(deepEqual(
+      {
+        where: {username: args.username}
+      }))).once();
+  });
+
+  it('should find the user by id if it was defined', async () => {
+    // arrange
+    const args: GerUserArgs = {id: 'idddddddddd'};
+    // act
+    await userDS.getUser(args);
+    // assert
+    verify(MockUserDelegate.findUnique(deepEqual(
+      {where: {authUserID: args.id}}
+    ))).once();
+  });
+
+  it('should find the user only by id if both id and username are defined',
+    async () => {
+      // arrange
+      const args: GerUserArgs = {id: 'idddddddddd', username: 'usernameeeee'};
+      // act
+      await userDS.getUser(args);
+      // assert
+      verify(MockUserDelegate.findUnique(anything())).once();
+    }
+  );
+
+  it('should return null if no user exists with those args', async () => {
+    // arrange
+    const args: GerUserArgs = {id: 'idddddddddd', username: 'usernameeeee'};
     when(MockUserDelegate.findUnique(anything())).thenResolve(null);
     // act
-    const result = await userDS.getUser(userID);
+    const result = await userDS.getUser(args);
     // assert
-    verify(MockUserDelegate.findUnique(
-      deepEqual({where: {authUserID: userID}}))
-    ).once();
     expect(result).toBe(null);
   });
 
   it('should return a user if it exists', async () => {
     // arrange
+    const args: GerUserArgs = {id: 'idddddddddd', username: 'usernameeeee'};
     when(MockUserDelegate.findUnique(anything())).thenResolve(mockPrismaUser);
     // act
-    const result = await userDS.getUser(userID);
+    const result = await userDS.getUser(args);
     // assert
-    verify(MockUserDelegate.findUnique(
-      deepEqual({where: {authUserID: userID}}))
-    ).once();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
 });

@@ -11,6 +11,7 @@ import {
   Friendship,
   FriendshipInfo
 } from "../../../../src/features/friend/graphql/types";
+import {GerUserArgs} from "../../../../src/features/user/graphql/types";
 
 const MockFriendDS = mock<FriendDataSource>();
 const MockUserDS = mock<UserDataSource>();
@@ -29,7 +30,8 @@ const context = {
 const resolver = new FriendResolver();
 
 describe('getFriendshipInfo', () => {
-  const act = () => resolver.getFriendshipInfo(context, user2ID);
+  const args : GerUserArgs = {username: 'usernammmmmmmme'};
+  const act = () => resolver.getFriendshipInfo(context, args);
 
   beforeEach(() => {
     resetCalls(MockUserDS);
@@ -62,8 +64,8 @@ describe('getFriendshipInfo', () => {
       user: mockGraphQLUser,
     };
     expect(result).toStrictEqual(expected);
-    verify(MockUserDS.getUser(user2ID)).once();
-    verify(MockFriendDS.getFriendship(userID, user2ID)).once();
+    verify(MockUserDS.getUser(args)).once();
+    verify(MockFriendDS.getFriendship(userID, mockGraphQLUser.id)).once();
   });
 });
 

@@ -16,7 +16,7 @@ export class UserResolver {
   @UseMiddleware(isAuthenticated)
   async me(@Ctx() context: Context): Promise<User> {
     const user = await context.toolBox
-      .dataSources.userDS.getUser(context.userID!);
+      .dataSources.userDS.getUser({id: context.userID!});
     if (!user) throw new ApolloError("This user has to register", "USER_NOT_FOUND");
     return {
       ...user,

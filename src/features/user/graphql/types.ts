@@ -1,4 +1,4 @@
-import {Field, InputType, ObjectType} from "type-graphql";
+import {ArgsType, Field, InputType, ObjectType} from "type-graphql";
 import {FileUpload, GraphQLUpload} from "graphql-upload";
 
 @ObjectType()
@@ -35,4 +35,12 @@ export class UserUpdate {
   photo?: Promise<FileUpload>;
   @Field({nullable: true})
   deletePhoto?: Boolean;
+}
+
+@ArgsType()
+export class GerUserArgs {
+  @Field({nullable: true})
+  id?: string;
+  @Field({nullable: true})
+  username?: string;
 }
