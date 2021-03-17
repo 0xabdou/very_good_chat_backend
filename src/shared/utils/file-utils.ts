@@ -1,11 +1,8 @@
 import {FileUpload} from "graphql-upload";
+import * as fs from "fs";
 import {createWriteStream} from "fs";
 import {injectable} from "inversify";
-
-export type SaveProfilePhotoArgs = {
-  userID: string,
-  photo: Promise<FileUpload>,
-}
+import {v4} from 'uuid';
 
 @injectable()
 export default class FileUtils {
@@ -16,14 +13,13 @@ export default class FileUtils {
     this._storageDir = storageDir;
   }
 
-  async saveProfilePhoto(args: SaveProfilePhotoArgs): Promise<string> {
-    const {createReadStream, mimetype} = await args.photo;
-    const photoType = mimetype.split('/')[1];
-    const photoPath = `${args.userID}_pp.${photoType}`;
-    const writeableStream = createWriteStream(
-      `${this._storageDir}/${photoPath}`,
-      {autoClose: true}
-    );
+  async saveTempFile(photo: Promise<FileUpload>): Promise<string> {
+    const {createReadStream, mimetype} = await photo;
+    const ext = mimetype.split('/')[1];
+    const name = v4();
+    const photoPath = `${name}.${ext}`;
+    const filePath = `${this._storageDir}/${photoPath}`;
+    const writeableStream = createWriteStream(filePath, {autoClose: true});
     const saved = await new Promise<boolean>(resolve => {
       createReadStream()
         .pipe(writeableStream)
@@ -31,6 +27,10 @@ export default class FileUtils {
         .on('error', () => resolve(false));
     });
     if (!saved) throw new Error("Could not save photo");
-    return photoPath;
+    return filePath;
+  }
+
+  async deleteTempFile(path: string) {
+    fs.unlinkSync(path);
   }
 }

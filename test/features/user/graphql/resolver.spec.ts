@@ -21,9 +21,11 @@ import {
   UserUpdate
 } from "../../../../src/features/user/graphql/types";
 import {FileUpload} from "graphql-upload";
+import {IUploader} from "../../../../src/shared/apis/uploader";
 
 const MockUserDataSource = mock<UserDataSource>();
 const MockUserValidators = mock<UserValidators>();
+const MockUploader = mock<IUploader>();
 const MockFileUtils = mock<FileUtils>();
 
 const userID = 'userIDDDD';
@@ -37,6 +39,7 @@ const context = {
   toolBox: {
     dataSources: {
       userDS: instance(MockUserDataSource),
+      uploader: instance(MockUploader),
     },
     validators: {
       user: instance(MockUserValidators)
@@ -52,43 +55,8 @@ const resolver = new UserResolver();
 beforeEach(() => {
   resetCalls(MockUserDataSource);
   resetCalls(MockUserValidators);
+  resetCalls(MockUploader);
   resetCalls(MockFileUtils);
-});
-
-describe('_completePhotoUrl', () => {
-  const ogPort = process.env.PORT;
-  const photoURL = mockGraphQLUser.photoURL;
-
-  afterAll(() => {
-    process.env.PORT = ogPort;
-  });
-
-  it('should return the correct url if the port is 80', () => {
-    // arrange
-    process.env.PORT = '80';
-    // act
-    const result = resolver._completePhotoUrl(photoURL, context);
-    // assert
-    expect(result).toBe(`${req.protocol}://${req.hostname}/${photoURL}`);
-  });
-
-  it('should return the correct url if the port is 443', () => {
-    // arrange
-    process.env.PORT = '443';
-    // act
-    const result = resolver._completePhotoUrl(photoURL, context);
-    // assert
-    expect(result).toBe(`${req.protocol}://${req.hostname}/${photoURL}`);
-  });
-
-  it('should return the correct url if the port 5432', () => {
-    // arrange
-    process.env.PORT = '5432';
-    // act
-    const result = resolver._completePhotoUrl(photoURL, context);
-    // assert
-    expect(result).toBe(`${req.protocol}://${req.hostname}:5432/${photoURL}`);
-  });
 });
 
 describe('me', () => {
@@ -113,11 +81,7 @@ describe('me', () => {
     // act
     const result = await resolver.me(context);
     // assert
-    const expected: User = {
-      ...mockGraphQLUser,
-      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context),
-    };
-    expect(result).toStrictEqual(expected);
+    expect(result).toStrictEqual(mockGraphQLUser);
   });
 });
 
@@ -193,16 +157,14 @@ describe('register', () => {
     // act
     const result = await resolver.register(context, noPhotoCreation);
     // assert
-    verify(MockFileUtils.saveProfilePhoto(anything())).never();
-    expect(result).toStrictEqual({
-      ...mockGraphQLUser,
-      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
-    });
+    verify(MockFileUtils.saveTempFile(anything())).never();
+    verify(MockUploader.uploadAvatar(anything())).never();
+    expect(result).toStrictEqual(mockGraphQLUser);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveProfilePhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -210,22 +172,38 @@ describe('register', () => {
     expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
   });
 
-  it('should save photo if it is sent', async () => {
+  it('should throw an error if the sent photo failed to upload', async () => {
     // arrange
-    when(MockFileUtils.saveProfilePhoto(anything()))
+    when(MockUploader.uploadAvatar(anything()))
+      .thenReject(new Error('Failed to upload'));
+    // act
+    const error = await getThrownError();
+    // assert
+    expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
+  });
+
+  it('should save -> upload -> delete temp photo if it is sent, ', async () => {
+    // arrange
+    const path = 'paaaaaaathhhhhhhhhhh';
+    when(MockFileUtils.saveTempFile(anything()))
+      .thenResolve(path);
+    when(MockUploader.uploadAvatar(anything()))
       .thenResolve(photoURL);
     // act
     await act();
     // assert
-    verify(MockFileUtils.saveProfilePhoto(deepEqual({
-      userID: userID,
-      photo: creation.photo!,
-    }))).once();
+    verify(MockFileUtils.saveTempFile(creation.photo!)).once();
+    verify(MockUploader.uploadAvatar(deepEqual({photoPath: path, userID})))
+      .once();
+    verify(MockFileUtils.deleteTempFile(path)).once();
   });
 
   it('should create the user and return it if al goes well', async () => {
     // arrange
-    when(MockFileUtils.saveProfilePhoto(anything()))
+    const path = 'paaaaaaathhhhhhhhhhh';
+    when(MockFileUtils.saveTempFile(anything()))
+      .thenResolve(path);
+    when(MockUploader.uploadAvatar(anything()))
       .thenResolve(photoURL);
     // act
     const result = await act();
@@ -236,10 +214,7 @@ describe('register', () => {
       name: creation.name ?? undefined,
       photoURL: photoURL,
     }))).once();
-    expect(result).toStrictEqual({
-      ...mockGraphQLUser,
-      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
-    });
+    expect(result).toStrictEqual(mockGraphQLUser);
   });
 });
 
@@ -265,7 +240,7 @@ describe('updateUser', () => {
   beforeEach(() => {
     reset(MockUserValidators);
     when(MockUserDataSource.isUsernameTaken(anything())).thenResolve(false);
-    when(MockFileUtils.saveProfilePhoto(anything())).thenResolve(photoURL);
+    when(MockFileUtils.saveTempFile(anything())).thenResolve(photoURL);
     when(MockUserDataSource.updateUser(anything())).thenResolve(mockGraphQLUser);
   });
 
@@ -325,16 +300,14 @@ describe('updateUser', () => {
     // act
     const result = await resolver.updateUser(context, noPhotoUpdate);
     // assert
-    verify(MockFileUtils.saveProfilePhoto(anything())).never();
-    expect(result).toStrictEqual({
-      ...mockGraphQLUser,
-      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
-    });
+    verify(MockFileUtils.saveTempFile(anything())).never();
+    verify(MockUploader.uploadAvatar(anything())).never();
+    expect(result).toStrictEqual(mockGraphQLUser);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveProfilePhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -342,17 +315,30 @@ describe('updateUser', () => {
     expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
   });
 
-  it('should save photo if it is sent', async () => {
+  it('should throw an error if the sent photo failed to upload', async () => {
     // arrange
-    when(MockFileUtils.saveProfilePhoto(anything()))
+    when(MockUploader.uploadAvatar(anything()))
+      .thenReject(new Error('Failed to upload'));
+    // act
+    const error = await getThrownError();
+    // assert
+    expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
+  });
+
+  it('should save -> upload -> delete temp photo if it is sent', async () => {
+    // arrange
+    const path = 'asljdskldfklajs';
+    when(MockFileUtils.saveTempFile(anything()))
+      .thenResolve(path);
+    when(MockUploader.uploadAvatar(anything()))
       .thenResolve(photoURL);
     // act
     await act();
     // assert
-    verify(MockFileUtils.saveProfilePhoto(deepEqual({
-      userID: userID,
-      photo: update.photo!,
-    }))).once();
+    verify(MockFileUtils.saveTempFile(update.photo!)).once();
+    verify(MockUploader.uploadAvatar(deepEqual({userID, photoPath: path})))
+      .once();
+    verify(MockFileUtils.deleteTempFile(path)).once();
   });
 
   it('should update the user and return it if al goes well', async () => {
@@ -372,10 +358,7 @@ describe('updateUser', () => {
       photoURL: undefined,
       deletePhoto: !!up.deletePhoto,
     }))).once();
-    expect(result).toStrictEqual({
-      ...mockGraphQLUser,
-      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
-    });
+    expect(result).toStrictEqual(mockGraphQLUser);
   });
 });
 
@@ -394,7 +377,7 @@ describe('checkUsernameExistence', () => {
 });
 
 describe('findUsers', () => {
-  it('should return the found users', async ()=> {
+  it('should return the found users', async () => {
     // arrange
     const promise = new Promise<User[]>(r => r([mockGraphQLUser]));
     const searchQuery = 'search query';
@@ -402,10 +385,7 @@ describe('findUsers', () => {
     // act
     const result = await resolver.findUsers(context, searchQuery);
     // assert
-    expect(result).toStrictEqual([{
-      ...mockGraphQLUser,
-      photoURL: resolver._completePhotoUrl(mockGraphQLUser.photoURL, context)
-    }]);
+    expect(result).toStrictEqual([mockGraphQLUser]);
     verify(MockUserDataSource.findUsers(searchQuery)).once();
   });
 });

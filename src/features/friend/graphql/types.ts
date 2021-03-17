@@ -17,7 +17,7 @@ registerEnumType(FriendshipStatus, {name: 'FriendshipStatus'});
 export class Friendship {
   @Field(ofTypeFriendshipStatus)
   status!: FriendshipStatus;
-  @Field()
+  @Field({nullable: true})
   date?: Date;
 }
 

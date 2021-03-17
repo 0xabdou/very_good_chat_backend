@@ -11,6 +11,8 @@ import UserDataSource from "../features/user/data/user-data-source";
 import userValidators from "../features/user/graphql/validators";
 import FileUtils from "../shared/utils/file-utils";
 import FriendDataSource from "../features/friend/data/friend-data-source";
+import Uploader, {IUploader} from "../shared/apis/uploader";
+import {Storage} from "@google-cloud/storage";
 
 const container = new Container();
 
@@ -21,6 +23,8 @@ export const initContainer = async () => {
   container.bind<AxiosStatic>(TYPES.Axios).toConstantValue(axios);
   // Google API
   container.bind<GoogleAPI>(TYPES.GoogleAPI).to(GoogleAPI);
+  // Google Storage API
+  container.bind<Storage>(TYPES.Storage).toConstantValue(new Storage());
   // JWT tokens stuff
   container.bind<Signer>(TYPES.signer).toConstantValue(signer);
   container.bind<Tokens>(TYPES.Tokens).to(Tokens);
@@ -30,10 +34,13 @@ export const initContainer = async () => {
   container.bind<UserDataSource>(TYPES.UserDataSource).to(UserDataSource);
   // Friend data source
   container.bind<FriendDataSource>(TYPES.FriendDataSource).to(FriendDataSource);
+  // Shared APIS
+  container.bind<IUploader>(TYPES.IUploader).to(Uploader);
 
   // Context data sources
   container.bind<DataSources>(TYPES.DataSources).toConstantValue({
     googleAPI: container.get(TYPES.GoogleAPI),
+    uploader: container.get(TYPES.IUploader),
     tokens: container.get(TYPES.Tokens),
     authDS: container.get(TYPES.AuthDataSource),
     userDS: container.get(TYPES.UserDataSource),

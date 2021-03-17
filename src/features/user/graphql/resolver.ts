@@ -5,7 +5,8 @@ import {ApolloError, UserInputError} from "apollo-server-express";
 import isAuthenticated from "../../auth/graphql/is-authenticated";
 import Context from "../../../shared/context";
 import {
-  returnsBoolean, returnsListOfUsers,
+  returnsBoolean,
+  returnsListOfUsers,
   returnsUser
 } from "../../../shared/graphql/return-types";
 import {FileUpload} from "graphql-upload";
@@ -18,11 +19,7 @@ export class UserResolver {
     const user = await context.toolBox
       .dataSources.userDS.getUser({id: context.userID!});
     if (!user) throw new ApolloError("This user has to register", "USER_NOT_FOUND");
-    return {
-      ...user,
-      name: user.name,
-      photoURL: this._completePhotoUrl(user.photoURL, context),
-    };
+    return user;
   }
 
   @Mutation(returnsUser)
@@ -50,18 +47,12 @@ export class UserResolver {
     if (creation.photo) {
       photoPath = await this._savePhoto(context, creation.photo);
     }
-    const user = await context.toolBox.dataSources.userDS.createUser({
+    return context.toolBox.dataSources.userDS.createUser({
       authUserID: context.userID!,
       username: creation.username,
       name: creation.name ?? undefined,
       photoURL: photoPath,
     });
-    return {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      photoURL: this._completePhotoUrl(user.photoURL, context)
-    };
   }
 
   @Mutation(returnsUser)
@@ -86,7 +77,7 @@ export class UserResolver {
     if (!update.deletePhoto && update.photo) {
       photoURL = await this._savePhoto(context, update.photo);
     }
-    const user = await context.toolBox.dataSources.userDS.updateUser({
+    return context.toolBox.dataSources.userDS.updateUser({
       authUserID: context.userID!,
       username: update.username,
       name: update.name,
@@ -94,10 +85,6 @@ export class UserResolver {
       photoURL,
       deletePhoto: !!update.deletePhoto,
     });
-    return {
-      ...user,
-      photoURL: this._completePhotoUrl(user.photoURL, context)
-    };
   }
 
 
@@ -112,39 +99,28 @@ export class UserResolver {
 
   @Query(returnsListOfUsers)
   @UseMiddleware(isAuthenticated)
-  async findUsers(
+  findUsers(
     @Ctx() context: Context,
     @Arg('searchQuery') searchQuery: string
-  ) : Promise<User[]> {
-    const users = await context.toolBox.dataSources.userDS.findUsers(searchQuery);
-    return users.map(u => {
-      return {
-        ...u,
-        photoURL: this._completePhotoUrl(u.photoURL, context)};
-    });
+  ): Promise<User[]> {
+    return context.toolBox.dataSources.userDS.findUsers(searchQuery);
   }
 
   async _savePhoto(context: Context, photo: Promise<FileUpload>) {
     try {
-      return await context.toolBox.utils.file.saveProfilePhoto({
+      const tempFilePath = await context.toolBox.utils.file.saveTempFile(photo);
+      const url = await context.toolBox.dataSources.uploader.uploadAvatar({
         userID: context.userID!,
-        photo,
+        photoPath: tempFilePath,
       });
+      context.toolBox.utils.file.deleteTempFile(tempFilePath);
+      return url;
     } catch (e) {
+      console.log(e);
       throw new ApolloError(
         "Couldn't save the photo",
         "INTERNAL_SERVER_ERROR"
       );
-    }
-  }
-
-  _completePhotoUrl(
-    photoURL: string | undefined, context: Context): string | undefined {
-    if (photoURL) {
-      const req = context.req;
-      const PORT = process.env.PORT ?? 4000;
-      const port = (PORT == '80' || PORT == '443') ? '' : `:${PORT}`;
-      return `${req.protocol}://${req.hostname}${port}/${photoURL}`;
     }
   }
 }
