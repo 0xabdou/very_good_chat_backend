@@ -12,9 +12,9 @@ import UserDataSource
   from "../../../../src/features/user/data/user-data-source";
 import Context from "../../../../src/shared/context";
 import {UserValidators} from "../../../../src/features/user/graphql/validators";
-import FileUtils from "../../../../src/shared/utils/file-utils";
+import FileUtils, {ResizedPhotos} from "../../../../src/shared/utils/file-utils";
 import {UserResolver} from "../../../../src/features/user/graphql/resolver";
-import {mockGraphQLUser} from "../../../mock-objects";
+import {mockGraphQLUser, mockResizedPhotos} from "../../../mock-objects";
 import {
   User,
   UserCreation,
@@ -157,14 +157,14 @@ describe('register', () => {
     // act
     const result = await resolver.register(context, noPhotoCreation);
     // assert
-    verify(MockFileUtils.saveTempFile(anything())).never();
+    verify(MockFileUtils.saveTempPhoto(anything())).never();
     verify(MockUploader.uploadAvatar(anything())).never();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveTempFile(anything()))
+    when(MockFileUtils.saveTempPhoto(anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -185,26 +185,45 @@ describe('register', () => {
   it('should save -> upload -> delete temp photo if it is sent, ', async () => {
     // arrange
     const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempFile(anything()))
+    when(MockFileUtils.saveTempPhoto(anything()))
       .thenResolve(path);
+    when(MockFileUtils.generateResizedPhotos(anything()))
+      .thenResolve(mockResizedPhotos);
     when(MockUploader.uploadAvatar(anything()))
       .thenResolve(photoURL);
     // act
     await act();
     // assert
-    verify(MockFileUtils.saveTempFile(creation.photo!)).once();
-    verify(MockUploader.uploadAvatar(deepEqual({photoPath: path, userID})))
-      .once();
-    verify(MockFileUtils.deleteTempFile(path)).once();
+    verify(MockFileUtils.saveTempPhoto(creation.photo!)).once();
+    verify(MockFileUtils.generateResizedPhotos(path)).once();
+    for (let photoPath of Object.values(mockResizedPhotos)) {
+      verify(MockUploader.uploadAvatar(deepEqual({photoPath, userID})))
+        .once();
+      verify(MockFileUtils.deleteTempFile(photoPath)).once();
+    }
   });
 
   it('should create the user and return it if al goes well', async () => {
     // arrange
     const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempFile(anything()))
+    when(MockFileUtils.saveTempPhoto(anything()))
       .thenResolve(path);
-    when(MockUploader.uploadAvatar(anything()))
-      .thenResolve(photoURL);
+    when(MockFileUtils.generateResizedPhotos(anything()))
+      .thenResolve(mockResizedPhotos);
+    const uploaded : ResizedPhotos = {
+      source: 'uploaded_source',
+      medium: 'uploaded_medium',
+      small: 'uploaded_small'
+    }
+    when(MockUploader.uploadAvatar(deepEqual({
+      userID, photoPath: mockResizedPhotos.source
+    }))).thenResolve(uploaded.source);
+    when(MockUploader.uploadAvatar(deepEqual({
+      userID, photoPath: mockResizedPhotos.medium
+    }))).thenResolve(uploaded.medium);
+    when(MockUploader.uploadAvatar(deepEqual({
+      userID, photoPath: mockResizedPhotos.small
+    }))).thenResolve(uploaded.small);
     // act
     const result = await act();
     // assert
@@ -212,7 +231,7 @@ describe('register', () => {
       authUserID: userID,
       username: creation.username,
       name: creation.name ?? undefined,
-      photoURL: photoURL,
+      photo: uploaded
     }))).once();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
@@ -240,7 +259,7 @@ describe('updateUser', () => {
   beforeEach(() => {
     reset(MockUserValidators);
     when(MockUserDataSource.isUsernameTaken(anything())).thenResolve(false);
-    when(MockFileUtils.saveTempFile(anything())).thenResolve(photoURL);
+    when(MockFileUtils.saveTempPhoto(anything())).thenResolve(photoURL);
     when(MockUserDataSource.updateUser(anything())).thenResolve(mockGraphQLUser);
   });
 
@@ -300,14 +319,14 @@ describe('updateUser', () => {
     // act
     const result = await resolver.updateUser(context, noPhotoUpdate);
     // assert
-    verify(MockFileUtils.saveTempFile(anything())).never();
+    verify(MockFileUtils.saveTempPhoto(anything())).never();
     verify(MockUploader.uploadAvatar(anything())).never();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveTempFile(anything()))
+    when(MockFileUtils.saveTempPhoto(anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -325,41 +344,66 @@ describe('updateUser', () => {
     expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
   });
 
-  it('should save -> upload -> delete temp photo if it is sent', async () => {
+  it('should save -> upload -> delete temp photo if it is sent, ', async () => {
     // arrange
-    const path = 'asljdskldfklajs';
-    when(MockFileUtils.saveTempFile(anything()))
+    const path = 'paaaaaaathhhhhhhhhhh';
+    when(MockFileUtils.saveTempPhoto(anything()))
       .thenResolve(path);
+    when(MockFileUtils.generateResizedPhotos(anything()))
+      .thenResolve(mockResizedPhotos);
     when(MockUploader.uploadAvatar(anything()))
       .thenResolve(photoURL);
     // act
     await act();
     // assert
-    verify(MockFileUtils.saveTempFile(update.photo!)).once();
-    verify(MockUploader.uploadAvatar(deepEqual({userID, photoPath: path})))
-      .once();
-    verify(MockFileUtils.deleteTempFile(path)).once();
+    verify(MockFileUtils.saveTempPhoto(update.photo!)).once();
+    verify(MockFileUtils.generateResizedPhotos(path)).once();
+    for (let photoPath of Object.values(mockResizedPhotos)) {
+      verify(MockUploader.uploadAvatar(deepEqual({photoPath, userID})))
+        .once();
+      verify(MockFileUtils.deleteTempFile(photoPath)).once();
+    }
   });
 
   it('should update the user and return it if al goes well', async () => {
     // arrange
     const up: UserUpdate = {
       ...update,
-      deletePhoto: true,
+      deleteName: true,
     };
+    const path = 'paaaaaaathhhhhhhhhhh';
+    when(MockFileUtils.saveTempPhoto(anything()))
+      .thenResolve(path);
+    when(MockFileUtils.generateResizedPhotos(anything()))
+      .thenResolve(mockResizedPhotos);
+    const uploaded : ResizedPhotos = {
+      source: 'uploaded_source',
+      medium: 'uploaded_medium',
+      small: 'uploaded_small'
+    }
+    when(MockUploader.uploadAvatar(deepEqual({
+      userID, photoPath: mockResizedPhotos.source
+    }))).thenResolve(uploaded.source);
+    when(MockUploader.uploadAvatar(deepEqual({
+      userID, photoPath: mockResizedPhotos.medium
+    }))).thenResolve(uploaded.medium);
+    when(MockUploader.uploadAvatar(deepEqual({
+      userID, photoPath: mockResizedPhotos.small
+    }))).thenResolve(uploaded.small);
     // act
     const result = await resolver.updateUser(context, up);
     // assert
+    expect(result).toStrictEqual(mockGraphQLUser);
     verify(MockUserDataSource.updateUser(deepEqual({
       authUserID: userID,
       username: up.username,
       name: up.name,
       deleteName: !!up.deleteName,
-      photoURL: undefined,
+      photo:uploaded,
       deletePhoto: !!up.deletePhoto,
     }))).once();
     expect(result).toStrictEqual(mockGraphQLUser);
-  });
+  })
 });
 
 describe('checkUsernameExistence', () => {

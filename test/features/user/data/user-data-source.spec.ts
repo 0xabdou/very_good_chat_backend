@@ -131,7 +131,12 @@ describe('createUser', () => {
     const result = await userDS.createUser(mockCreateUserArgs);
     // assert
     verify(MockUserDelegate.create(
-      deepEqual({data: mockCreateUserArgs}))
+      deepEqual({data: {
+        ...mockCreateUserArgs,
+          photoURLSource: undefined,
+          photoURLMedium: undefined,
+          photoURLSmall: undefined,
+        }}))
     ).once();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
@@ -154,7 +159,9 @@ describe('updateUser', () => {
       data: {
         username: updates.username,
         name: undefined,
-        photoURL: null,
+        photoURLSource: null,
+        photoURLMedium: null,
+        photoURLSmall: null,
       },
     }))).once();
     expect(result).toStrictEqual(mockGraphQLUser);

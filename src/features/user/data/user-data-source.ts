@@ -2,6 +2,7 @@ import {PrismaClient, User as PrismaUser} from "@prisma/client";
 import {GerUserArgs, User} from "../graphql/types";
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
+import {ResizedPhotos} from "../../../shared/utils/file-utils";
 
 @injectable()
 export default class UserDataSource {
@@ -29,7 +30,16 @@ export default class UserDataSource {
   }
 
   async createUser(args: CreateUserArgs): Promise<User> {
-    const user = await this._prisma.user.create({data: args});
+    const user = await this._prisma.user.create({
+      data: {
+        username: args.username,
+        authUserID: args.authUserID,
+        name: args.name,
+        photoURLSource: args.photo?.source,
+        photoURLMedium: args.photo?.medium,
+        photoURLSmall: args.photo?.small,
+      }
+    });
     return UserDataSource._getGraphQLUser(user);
   }
 
@@ -39,7 +49,9 @@ export default class UserDataSource {
       data: {
         username: args.username,
         name: args.deleteName ? null : args.name,
-        photoURL: args.deletePhoto ? null : args.photoURL,
+        photoURLSource: args.deletePhoto ? null : args.photo?.source,
+        photoURLMedium: args.deletePhoto ? null : args.photo?.medium,
+        photoURLSmall: args.deletePhoto ? null : args.photo?.small,
       },
     });
     return UserDataSource._getGraphQLUser(user);
@@ -66,7 +78,9 @@ export default class UserDataSource {
       id: user.authUserID,
       username: user.username,
       name: user.name ?? undefined,
-      photoURL: user.photoURL ?? undefined,
+      photoURLSource: user.photoURLSource ?? undefined,
+      photoURLMedium: user.photoURLMedium ?? undefined,
+      photoURLSmall: user.photoURLSmall ?? undefined
     };
   }
 }
@@ -75,7 +89,7 @@ export type CreateUserArgs = {
   authUserID: string,
   username: string,
   name?: string,
-  photoURL?: string,
+  photo?: ResizedPhotos,
 }
 
 export type UpdateUserArgs = {
@@ -83,6 +97,6 @@ export type UpdateUserArgs = {
   username?: string,
   name?: string,
   deleteName?: boolean,
-  photoURL?: string,
+  photo?: ResizedPhotos,
   deletePhoto?: boolean
 }

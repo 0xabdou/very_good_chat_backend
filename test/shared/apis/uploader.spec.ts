@@ -14,14 +14,15 @@ describe('uploadAvatar', () => {
   it('should upload the avatar', async () => {
     // arrange
     const res = {} as UploadResponse;
-    const photoPath = 'avatar path';
+    const filename = 'avatar.png';
+    const photoPath = `path/to/${filename}`;
     const userID = 'userIDDDD';
     when(MockBucket.upload(anything())).thenResolve(res);
     // act
     const result = await uploader.uploadAvatar({photoPath,userID});
     // assert
     const bucketName = process.env.AVATARS_BUCKET!;
-    const destination = `${userID}/avatar.png`;
+    const destination = `${userID}/${filename}`;
     verify(MockStorage.bucket(bucketName)).once();
     verify(MockBucket.upload(photoPath, deepEqual({destination}))).once();
     expect(result).toBe(`${Uploader.BASE_URL}/${bucketName}/${destination}`);

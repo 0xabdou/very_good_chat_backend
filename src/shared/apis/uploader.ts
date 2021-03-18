@@ -16,7 +16,8 @@ export default class Uploader implements IUploader {
   }
 
   async uploadAvatar(args: UploadAvatarArgs): Promise<string> {
-    const destination = `${args.userID}/avatar.png`;
+    const fileName = args.photoPath.split('/').pop();
+    const destination = `${args.userID}/${fileName}`;
     const bucket = process.env.AVATARS_BUCKET!;
     await this._storage.bucket(bucket).upload(args.photoPath, {destination});
     return `${Uploader.BASE_URL}/${bucket}/${destination}`;

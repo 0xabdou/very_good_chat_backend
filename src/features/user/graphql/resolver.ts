@@ -10,6 +10,7 @@ import {
   returnsUser
 } from "../../../shared/graphql/return-types";
 import {FileUpload} from "graphql-upload";
+import {ResizedPhotos} from "../../../shared/utils/file-utils";
 
 @Resolver()
 export class UserResolver {
@@ -43,15 +44,15 @@ export class UserResolver {
     if (usernameTaken)
       throw new ApolloError('Username taken', 'USERNAME_TAKEN');
 
-    let photoPath: string | undefined;
+    let urls: ResizedPhotos | undefined;
     if (creation.photo) {
-      photoPath = await this._savePhoto(context, creation.photo);
+      urls = await this._savePhoto(context, creation.photo);
     }
     return context.toolBox.dataSources.userDS.createUser({
       authUserID: context.userID!,
       username: creation.username,
       name: creation.name ?? undefined,
-      photoURL: photoPath,
+      photo: urls,
     });
   }
 
@@ -73,16 +74,16 @@ export class UserResolver {
     if (errors.username || errors.name) {
       throw new UserInputError('Invalid input', errors);
     }
-    let photoURL: string | undefined;
+    let urls: ResizedPhotos | undefined;
     if (!update.deletePhoto && update.photo) {
-      photoURL = await this._savePhoto(context, update.photo);
+      urls = await this._savePhoto(context, update.photo);
     }
     return context.toolBox.dataSources.userDS.updateUser({
       authUserID: context.userID!,
       username: update.username,
       name: update.name,
       deleteName: !!update.deleteName,
-      photoURL,
+      photo: urls,
       deletePhoto: !!update.deletePhoto,
     });
   }
@@ -106,15 +107,28 @@ export class UserResolver {
     return context.toolBox.dataSources.userDS.findUsers(searchQuery);
   }
 
-  async _savePhoto(context: Context, photo: Promise<FileUpload>) {
+  async _savePhoto(context: Context, photo: Promise<FileUpload>):
+    Promise<ResizedPhotos> {
     try {
-      const tempFilePath = await context.toolBox.utils.file.saveTempFile(photo);
-      const url = await context.toolBox.dataSources.uploader.uploadAvatar({
-        userID: context.userID!,
-        photoPath: tempFilePath,
-      });
-      context.toolBox.utils.file.deleteTempFile(tempFilePath);
-      return url;
+      const fileUtils = context.toolBox.utils.file;
+      const uploader = context.toolBox.dataSources.uploader;
+      const userID = context.userID!;
+      const tempFilePath = await fileUtils.saveTempPhoto(photo);
+      const paths = await fileUtils.generateResizedPhotos(tempFilePath);
+      const promises = [
+        uploader.uploadAvatar({userID, photoPath: paths.source}),
+        uploader.uploadAvatar({userID, photoPath: paths.medium}),
+        uploader.uploadAvatar({userID, photoPath: paths.small}),
+      ];
+      const urls = await Promise.all(promises);
+      for (let path of Object.values(paths)) {
+        fileUtils.deleteTempFile(path);
+      }
+      return {
+        source: urls[0],
+        medium: urls[1],
+        small: urls[2]
+      };
     } catch (e) {
       console.log(e);
       throw new ApolloError(

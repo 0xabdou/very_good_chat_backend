@@ -20,11 +20,13 @@ model AuthUser {
 }
 
 model User {
-    username    String @unique
-    name        String? @map("name")
-    photoURL    String? @map("photo_url")
-    authUser    AuthUser @relation(fields: [authUserID], references: [id])
-    authUserID  String @unique @map("auth_user")
+    username            String @unique
+    name                String? @map("name")
+    photoURLSource      String? @map("photo_url_source")
+    photoURLMedium      String? @map("photo_url_medium")
+    photoURLSmall       String? @map("photo_url_small")
+    authUser            AuthUser @relation(fields: [authUserID], references: [id])
+    authUserID          String @unique @map("auth_user")
 
     @@map("users")
 }

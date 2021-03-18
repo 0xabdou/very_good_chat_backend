@@ -1,7 +1,8 @@
 import {FileUpload} from "graphql-upload";
-import * as fs from "fs";
-import {createWriteStream} from "fs";
+import {createWriteStream, unlinkSync} from "fs";
+import {dirname, join} from 'path';
 import {injectable} from "inversify";
+import sharp from 'sharp';
 import {v4} from 'uuid';
 
 @injectable()
@@ -13,7 +14,7 @@ export default class FileUtils {
     this._storageDir = storageDir;
   }
 
-  async saveTempFile(photo: Promise<FileUpload>): Promise<string> {
+  async saveTempPhoto(photo: Promise<FileUpload>): Promise<string> {
     const {createReadStream, mimetype} = await photo;
     const ext = mimetype.split('/')[1];
     const name = v4();
@@ -30,7 +31,32 @@ export default class FileUtils {
     return filePath;
   }
 
-  async deleteTempFile(path: string) {
-    fs.unlinkSync(path);
+  async generateResizedPhotos(photoPath: string): Promise<ResizedPhotos> {
+    const fileName = photoPath.split('/').pop();
+    const workingDir = dirname(photoPath);
+    const sizes = [48, 150];
+
+    const promises = sizes.map(async size => {
+      const thumbName = `${size}_${fileName}`;
+      const thumbPath = join(workingDir, thumbName);
+      await sharp(photoPath).resize(size).toFile(thumbPath);
+      return thumbPath;
+    });
+    const paths = await Promise.all(promises);
+    return {
+      source: photoPath,
+      small: paths[0],
+      medium: paths[1]
+    } as ResizedPhotos;
   }
+
+  async deleteTempFile(path: string) {
+    unlinkSync(path);
+  }
+}
+
+export type ResizedPhotos = {
+  source: string,
+  small: string,
+  medium: string,
 }

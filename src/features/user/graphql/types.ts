@@ -10,7 +10,11 @@ export class User {
   @Field({nullable: true})
   name?: string;
   @Field({nullable: true})
-  photoURL?: string;
+  photoURLSource?: string;
+  @Field({nullable: true})
+  photoURLMedium?: string;
+  @Field({nullable: true})
+  photoURLSmall?: string;
 }
 
 @InputType()

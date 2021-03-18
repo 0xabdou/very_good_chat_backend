@@ -6,6 +6,7 @@ import {
   Friendship,
   FriendshipStatus
 } from "../src/features/friend/graphql/types";
+import {ResizedPhotos} from "../src/shared/utils/file-utils";
 
 export const mockPrismaAuthUser: AuthUser = {
   id: 'auth_user_id',
@@ -15,7 +16,9 @@ export const mockPrismaAuthUser: AuthUser = {
 export const mockPrismaUser: User = {
   username: 'username',
   name: null,
-  photoURL: '/storage/auth_user_id_pp.png',
+  photoURLSource: '/storage/auth_user_id_pp_source.png',
+  photoURLMedium: '/storage/auth_user_id_pp_medium.png',
+  photoURLSmall: '/storage/auth_user_id_pp_small.png',
   authUserID: 'auth_user_id',
 };
 
@@ -23,8 +26,16 @@ export const mockGraphQLUser: GraphQLUser = {
   id: mockPrismaUser.authUserID,
   username: mockPrismaUser.username,
   name: mockPrismaUser.name ?? undefined,
-  photoURL: mockPrismaUser.photoURL ?? undefined,
+  photoURLSource: '/storage/auth_user_id_pp_source.png',
+  photoURLMedium: '/storage/auth_user_id_pp_medium.png',
+  photoURLSmall: '/storage/auth_user_id_pp_small.png',
 };
+
+export const mockResizedPhotos : ResizedPhotos = {
+  source: 'source',
+  medium: 'medium',
+  small: 'small'
+}
 
 export const mockAuthProviderUser: AuthProviderUser = {
   email: 'provider@email.com',
