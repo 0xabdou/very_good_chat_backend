@@ -1,4 +1,12 @@
-import {Arg, Args, Ctx, Mutation, Query, Resolver} from "type-graphql";
+import {
+  Arg,
+  Args,
+  Ctx,
+  Mutation,
+  Query,
+  Resolver,
+  UseMiddleware
+} from "type-graphql";
 import {
   returnsFriendship,
   returnsFriendshipInfo
@@ -7,11 +15,13 @@ import {Friendship, FriendshipInfo} from "./types";
 import Context from "../../../shared/context";
 import {GerUserArgs} from "../../user/graphql/types";
 import {ApolloError} from "apollo-server-express";
+import isAuthenticated from "../../auth/graphql/is-authenticated";
 
 @Resolver()
 export default class FriendResolver {
 
   @Query(returnsFriendshipInfo)
+  @UseMiddleware(isAuthenticated)
   async getFriendshipInfo(
     @Ctx() context: Context,
     @Args() args: GerUserArgs,
@@ -27,6 +37,7 @@ export default class FriendResolver {
   }
 
   @Mutation(returnsFriendship)
+  @UseMiddleware(isAuthenticated)
   sendFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
@@ -37,6 +48,7 @@ export default class FriendResolver {
   }
 
   @Mutation(returnsFriendship)
+  @UseMiddleware(isAuthenticated)
   acceptFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
@@ -47,6 +59,7 @@ export default class FriendResolver {
   }
 
   @Mutation(returnsFriendship)
+  @UseMiddleware(isAuthenticated)
   declineFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
@@ -58,6 +71,7 @@ export default class FriendResolver {
   }
 
   @Mutation(returnsFriendship)
+  @UseMiddleware(isAuthenticated)
   cancelFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
@@ -68,6 +82,7 @@ export default class FriendResolver {
   }
 
   @Mutation(returnsFriendship)
+  @UseMiddleware(isAuthenticated)
   unfriend(
     @Ctx() context: Context,
     @Arg('userID') userID: string

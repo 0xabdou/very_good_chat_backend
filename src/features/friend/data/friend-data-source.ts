@@ -2,6 +2,15 @@ import {PrismaClient} from '@prisma/client';
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
 import {Friendship, FriendshipStatus} from "../graphql/types";
+import {ApolloError} from "apollo-server-express";
+
+export const friendErrors = {
+  REQUEST_RECEIVED: 'REQUEST_RECEIVED',
+  REQUEST_ACCEPTED: 'REQUEST_ACCEPTED',
+  REQUEST_CANCELED: 'REQUEST_CANCELED',
+  ALREADY_FRIENDS: 'ALREADY_FRIENDS',
+  NOT_FRIENDS: 'NOT_FRIENDS'
+};
 
 @injectable()
 export default class FriendDataSource {
@@ -35,8 +44,28 @@ export default class FriendDataSource {
 
   async sendFriendRequest(
     currentUserID: string, otherUserID: string
-  ) : Promise<Friendship> {
+  ): Promise<Friendship> {
     // TODO: should check if user is blocked/blocking and throw an error
+    const existingFriend = await this._prisma.friend.findUnique({
+      where: {
+        user1ID_user2ID: {
+          user1ID: otherUserID,
+          user2ID: currentUserID
+        }
+      }
+    });
+    if (existingFriend) {
+      if (existingFriend.confirmed) {
+        throw new ApolloError(
+          "Users are already friends",
+          friendErrors.ALREADY_FRIENDS,
+        );
+      }
+      throw new ApolloError(
+        "Request already received",
+        friendErrors.REQUEST_RECEIVED,
+      );
+    }
     const friend = await this._prisma.friend.create({
       data: {
         user1ID: currentUserID,
@@ -51,53 +80,99 @@ export default class FriendDataSource {
 
   async acceptFriendRequest(
     currentUserID: string, otherUserID: string
-  ) : Promise<Friendship> {
-    const friend = await this._prisma.friend.update({
-      where: {
-        user1ID_user2ID: {
-          user1ID:  otherUserID,
-          user2ID: currentUserID,
-        }
-      },
-      data: {confirmed: true}
-    });
-    return {
-      status: FriendshipStatus.FRIENDS,
-      date: friend.date
-    };
+  ): Promise<Friendship> {
+    try {
+      const friend = await this._prisma.friend.update({
+        where: {
+          user1ID_user2ID: {
+            user1ID: otherUserID,
+            user2ID: currentUserID,
+          }
+        },
+        data: {confirmed: true}
+      });
+      return {
+        status: FriendshipStatus.FRIENDS,
+        date: friend.date
+      };
+    } catch (e) {
+      if (e.code == 'P2025') {
+        throw new ApolloError(
+          'Request canceled',
+          friendErrors.REQUEST_CANCELED
+        );
+      }
+      throw e;
+    }
   }
 
   async declineFriendRequest(
     currentUserID: string, otherUserID: string
-  ) : Promise<Friendship> {
+  ): Promise<Friendship> {
+    try {
       await this._prisma.friend.delete({
         where: {
           user1ID_user2ID: {
-            user1ID:  otherUserID,
+            user1ID: otherUserID,
             user2ID: currentUserID,
           }
         },
       });
       return {status: FriendshipStatus.STRANGERS};
+    } catch (e) {
+      console.log(e);
+      if (e.code == 'P2025') {
+        throw new ApolloError(
+          'The request was canceled',
+          friendErrors.REQUEST_CANCELED
+        );
+      }
+      throw e;
+    }
   }
 
   async cancelFriendRequest(
     currentUserID: string, otherUserID: string
-  ) : Promise<Friendship> {
-    await this._prisma.friend.delete({
+  ): Promise<Friendship> {
+    const existingFriend = await this._prisma.friend.findUnique({
       where: {
         user1ID_user2ID: {
-          user1ID:  currentUserID,
+          user1ID: currentUserID,
           user2ID: otherUserID,
         }
-      },
+      }
     });
-    return {status: FriendshipStatus.STRANGERS};
+    if (existingFriend?.confirmed) {
+      throw new ApolloError(
+        "You're already friends",
+        friendErrors.ALREADY_FRIENDS
+      );
+    }
+    try {
+      await this._prisma.friend.delete({
+        where: {
+          user1ID_user2ID: {
+            user1ID: currentUserID,
+            user2ID: otherUserID,
+          }
+        },
+      });
+      return {status: FriendshipStatus.STRANGERS};
+    } catch (e) {
+      console.log(e);
+      if (e.code == 'P2025') {
+        throw new ApolloError(
+          'The request was already canceled',
+          friendErrors.REQUEST_CANCELED
+        );
+      }
+      throw e;
+    }
   }
 
   async unfriend(
     currentUserID: string, otherUserID: string
-  ) : Promise<Friendship> {
+  ): Promise<Friendship> {
     await this._prisma.friend.deleteMany({
       where: {
         OR: [
