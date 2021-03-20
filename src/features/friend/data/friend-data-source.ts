@@ -1,8 +1,14 @@
-import {PrismaClient} from '@prisma/client';
+import {PrismaClient, User as PrismaUser} from '@prisma/client';
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
-import {Friendship, FriendshipStatus} from "../graphql/types";
+import {
+  FriendRequest,
+  FriendRequests,
+  Friendship,
+  FriendshipStatus
+} from "../graphql/types";
 import {ApolloError} from "apollo-server-express";
+import {User} from "../../user/graphql/types";
 
 export const friendErrors = {
   REQUEST_RECEIVED: 'REQUEST_RECEIVED',
@@ -16,6 +22,49 @@ export default class FriendDataSource {
 
   constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
     this._prisma = prisma;
+  }
+
+  async getFriendRequests(userID: string): Promise<FriendRequests> {
+    const friends = await this._prisma.friend.findMany({
+      where: {
+        AND: {
+          confirmed: false,
+          OR: {user1ID: userID, user2ID: userID}
+        }
+      },
+      orderBy: {date: 'desc'},
+      include: {
+        user2: {include: {user: true}},
+        user1: {include: {user: true}},
+      }
+    });
+    const sent: FriendRequest[] = [];
+    const received: FriendRequest[] = [];
+    friends.forEach(friend => {
+      if (friend.user1ID == userID) {
+        sent.push({
+          user: this._primaToGraphQLUser(friend.user2.user!),
+          date: friend.date
+        });
+      } else {
+        received.push({
+          user: this._primaToGraphQLUser(friend.user1.user!),
+          date: friend.date
+        });
+      }
+    });
+    return {sent, received};
+  }
+
+  _primaToGraphQLUser(user: PrismaUser): User {
+    return {
+      id: user.authUserID,
+      username: user.username,
+      name: user.name ?? undefined,
+      photoURLSource: user.photoURLSource ?? undefined,
+      photoURLMedium: user.photoURLMedium ?? undefined,
+      photoURLSmall: user.photoURLSmall ?? undefined,
+    };
   }
 
   async getFriendship(

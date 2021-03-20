@@ -1,19 +1,24 @@
 import {
   ofTypeFriendshipStatus,
   ofTypeGraphQLUpload,
-  returnsBoolean, returnsFriendship, returnsFriendshipInfo, returnsListOfUsers,
+  returnsBoolean,
+  returnsFriendRequests,
+  returnsFriendship,
+  returnsFriendshipInfo,
+  returnsListOfUsers,
   returnsLoginResponse,
   returnsString,
   returnsUser
-} from "../src/shared/graphql/return-types";
-import {LoginResponse} from "../src/features/auth/graphql/types";
-import {User} from "../src/features/user/graphql/types";
+} from "../../../src/shared/graphql/return-types";
+import {LoginResponse} from "../../../src/features/auth/graphql/types";
+import {User} from "../../../src/features/user/graphql/types";
 import {GraphQLUpload} from "graphql-upload";
 import {
+  FriendRequests,
   Friendship,
   FriendshipInfo,
   FriendshipStatus
-} from "../src/features/friend/graphql/types";
+} from "../../../src/features/friend/graphql/types";
 
 test('returnsString', () => {
   expect(returnsString()).toBe(String);
@@ -21,7 +26,7 @@ test('returnsString', () => {
 
 test('returnsBoolean', () => {
   expect(returnsBoolean()).toBe(Boolean);
-})
+});
 
 test('returnsLoginResponse', () => {
   expect(returnsLoginResponse()).toBe(LoginResponse);
@@ -43,11 +48,14 @@ test('returnsFriendship', () => {
   expect(returnsFriendship()).toBe(Friendship);
 });
 
+test('returnsFriendRequests', () => {
+  expect(returnsFriendRequests()).toBe(FriendRequests);
+});
 
 test('ofTypeGraphQLUpload', () => {
   expect(ofTypeGraphQLUpload()).toBe(GraphQLUpload);
-})
+});
 
 test('ofTypeFriendshipStatus', () => {
   expect(ofTypeFriendshipStatus()).toBe(FriendshipStatus);
-})
+});

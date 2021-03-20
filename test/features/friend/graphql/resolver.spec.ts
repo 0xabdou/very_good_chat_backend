@@ -8,6 +8,7 @@ import FriendResolver from "../../../../src/features/friend/graphql/resolver";
 import {ApolloError} from "apollo-server-express";
 import {mockFriendship, mockGraphQLUser} from "../../../mock-objects";
 import {
+  FriendRequests,
   Friendship,
   FriendshipInfo
 } from "../../../../src/features/friend/graphql/types";
@@ -29,8 +30,26 @@ const context = {
 } as Context;
 const resolver = new FriendResolver();
 
+describe('getFriendRequests', () => {
+  it('should return friend requests', async () => {
+    // arrange
+    const requests: FriendRequests = {
+      sent: [],
+      received: [
+        {user: mockGraphQLUser, date: new Date()}
+      ]
+    };
+    when(MockFriendDS.getFriendRequests(anything())).thenResolve(requests);
+    // act
+    const result = await resolver.getFriendRequests(context);
+    // assert
+    expect(result).toStrictEqual(requests);
+    verify(MockFriendDS.getFriendRequests(userID)).once();
+  });
+});
+
 describe('getFriendshipInfo', () => {
-  const args : GerUserArgs = {username: 'usernammmmmmmme'};
+  const args: GerUserArgs = {username: 'usernammmmmmmme'};
   const act = () => resolver.getFriendshipInfo(context, args);
 
   beforeEach(() => {

@@ -8,10 +8,11 @@ import {
   UseMiddleware
 } from "type-graphql";
 import {
+  returnsFriendRequests,
   returnsFriendship,
   returnsFriendshipInfo
 } from "../../../shared/graphql/return-types";
-import {Friendship, FriendshipInfo} from "./types";
+import {FriendRequests, Friendship, FriendshipInfo} from "./types";
 import Context from "../../../shared/context";
 import {GerUserArgs} from "../../user/graphql/types";
 import {ApolloError} from "apollo-server-express";
@@ -19,6 +20,13 @@ import isAuthenticated from "../../auth/graphql/is-authenticated";
 
 @Resolver()
 export default class FriendResolver {
+
+  @Query(returnsFriendRequests)
+  @UseMiddleware(isAuthenticated)
+  getFriendRequests(@Ctx() context: Context): Promise<FriendRequests> {
+    return context.toolBox.dataSources.friendDS
+      .getFriendRequests(context.userID!);
+  }
 
   @Query(returnsFriendshipInfo)
   @UseMiddleware(isAuthenticated)

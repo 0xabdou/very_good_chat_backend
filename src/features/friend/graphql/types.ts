@@ -28,3 +28,19 @@ export class FriendshipInfo {
   @Field()
   friendship!: Friendship;
 }
+
+@ObjectType()
+export class FriendRequest {
+  @Field()
+  user!: User;
+  @Field()
+  date!: Date;
+}
+
+@ObjectType()
+export class FriendRequests {
+  @Field(() => [FriendRequest])
+  sent!: FriendRequest[];
+  @Field(() => [FriendRequest])
+  received!: FriendRequest[];
+}

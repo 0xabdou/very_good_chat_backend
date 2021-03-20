@@ -1,4 +1,4 @@
-import {Friend, Prisma, PrismaClient} from '@prisma/client';
+import {AuthUser, Friend, Prisma, PrismaClient, User} from '@prisma/client';
 import {
   anything,
   deepEqual,
@@ -11,6 +11,7 @@ import {
 } from "ts-mockito";
 import FriendDataSource, {friendErrors} from "../../../../src/features/friend/data/friend-data-source";
 import {
+  FriendRequests,
   Friendship,
   FriendshipStatus
 } from "../../../../src/features/friend/graphql/types";
@@ -32,6 +33,114 @@ beforeAll(() => {
 });
 beforeEach(() => {
   resetCalls(MockFriendDelegate);
+});
+
+describe('getFriendRequests', () => {
+  const authUser1: AuthUser = {
+    id: 'id1',
+    email: 'email1'
+  };
+  const authUser2: AuthUser = {
+    id: 'id2',
+    email: 'email2'
+  };
+  const authUser3: AuthUser = {
+    id: 'id3',
+    email: 'email3'
+  };
+  const user1: User = {
+    authUserID: authUser1.id,
+    username: 'username',
+    name: 'name name',
+    photoURLSmall: null,
+    photoURLSource: null,
+    photoURLMedium: null
+  };
+  const user2: User = {
+    authUserID: authUser2.id,
+    username: 'username2',
+    name: 'name name2',
+    photoURLSmall: null,
+    photoURLSource: null,
+    photoURLMedium: null
+  };
+  const user3: User = {
+    authUserID: authUser3.id,
+    username: 'username3',
+    name: 'name name3',
+    photoURLSmall: null,
+    photoURLSource: null,
+    photoURLMedium: null
+  };
+  type FriendUser = Friend & {
+    user1: AuthUser & { user: User },
+    user2: AuthUser & { user: User },
+  };
+  const sentReq: FriendUser = {
+    id: 0,
+    user1ID: authUser1.id,
+    user2ID: authUser2.id,
+    user1: {...authUser1, user: user1},
+    user2: {...authUser2, user: user2},
+    date: new Date(),
+    confirmed: false
+  };
+  const receivedReq: FriendUser = {
+    id: 1,
+    user1ID: authUser3.id,
+    user2ID: authUser1.id,
+    user1: {...authUser3, user: user3},
+    user2: {...authUser1, user: user1},
+    date: new Date(),
+    confirmed: false
+  };
+
+  it('should return a list of friend requests', async () => {
+    // arrange
+    when(MockFriendDelegate.findMany(anything()))
+      .thenResolve([sentReq, receivedReq]);
+    // act
+    const result = await friendDS.getFriendRequests(authUser1.id);
+    // assert
+    const expected: FriendRequests = {
+      sent: [{
+        user: {
+          id: sentReq.user2.id,
+          username: sentReq.user2.user.username,
+          name: sentReq.user2.user.name!,
+          photoURLMedium: undefined,
+          photoURLSource: undefined,
+          photoURLSmall: undefined,
+        },
+        date: sentReq.date
+      }],
+      received: [{
+        user: {
+          id: receivedReq.user1.id,
+          username: receivedReq.user1.user.username,
+          name: receivedReq.user1.user.name!,
+          photoURLMedium: undefined,
+          photoURLSource: undefined,
+          photoURLSmall: undefined,
+        },
+        date: receivedReq.date
+      }]
+    };
+    expect(result).toStrictEqual(expected);
+    verify(MockFriendDelegate.findMany(deepEqual({
+      where: {
+        AND: {
+          confirmed: false,
+          OR: {user1ID: authUser1.id, user2ID: authUser1.id}
+        }
+      },
+      orderBy: {date: 'desc'},
+      include: {
+        user2: {include: {user: true}},
+        user1: {include: {user: true}},
+      }
+    }))).once();
+  });
 });
 
 describe('geFriendshipStatus', () => {
