@@ -6,10 +6,8 @@ import {ApolloError} from "apollo-server-express";
 
 export const friendErrors = {
   REQUEST_RECEIVED: 'REQUEST_RECEIVED',
-  REQUEST_ACCEPTED: 'REQUEST_ACCEPTED',
-  REQUEST_CANCELED: 'REQUEST_CANCELED',
+  REQUEST_REMOVED: 'REQUEST_REMOVED',
   ALREADY_FRIENDS: 'ALREADY_FRIENDS',
-  NOT_FRIENDS: 'NOT_FRIENDS'
 };
 
 @injectable()
@@ -99,7 +97,7 @@ export default class FriendDataSource {
       if (e.code == 'P2025') {
         throw new ApolloError(
           'Request canceled',
-          friendErrors.REQUEST_CANCELED
+          friendErrors.REQUEST_REMOVED
         );
       }
       throw e;
@@ -123,8 +121,8 @@ export default class FriendDataSource {
       console.log(e);
       if (e.code == 'P2025') {
         throw new ApolloError(
-          'The request was canceled',
-          friendErrors.REQUEST_CANCELED
+          'The request was canceled/declined',
+          friendErrors.REQUEST_REMOVED
         );
       }
       throw e;
@@ -163,7 +161,7 @@ export default class FriendDataSource {
       if (e.code == 'P2025') {
         throw new ApolloError(
           'The request was already canceled',
-          friendErrors.REQUEST_CANCELED
+          friendErrors.REQUEST_REMOVED
         );
       }
       throw e;

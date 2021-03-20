@@ -207,7 +207,7 @@ describe('acceptFriendRequest', () => {
       // act
       const error = await getThrownError();
       // assert
-      expect(error?.extensions.code).toBe(friendErrors.REQUEST_CANCELED);
+      expect(error?.extensions.code).toBe(friendErrors.REQUEST_REMOVED);
     },
   );
 
@@ -260,7 +260,7 @@ describe('declineFriendRequest', () => {
       // act
       const error = await getThrownError();
       // assert
-      expect(error?.extensions.code).toBe(friendErrors.REQUEST_CANCELED);
+      expect(error?.extensions.code).toBe(friendErrors.REQUEST_REMOVED);
     },
   );
 
@@ -329,7 +329,7 @@ describe('cancelFriendRequest', () => {
       // act
       const error = await getThrownError();
       // assert
-      expect(error?.extensions.code).toBe(friendErrors.REQUEST_CANCELED);
+      expect(error?.extensions.code).toBe(friendErrors.REQUEST_REMOVED);
     }
   );
 
