@@ -27,10 +27,15 @@ export default class FriendDataSource {
   async getFriendRequests(userID: string): Promise<FriendRequests> {
     const friends = await this._prisma.friend.findMany({
       where: {
-        AND: {
-          confirmed: false,
-          OR: {user1ID: userID, user2ID: userID}
-        }
+        AND: [
+          {confirmed: false},
+          {
+            OR: [
+              {user1ID: userID},
+              {user2ID: userID}
+            ]
+          }
+        ]
       },
       orderBy: {date: 'desc'},
       include: {

@@ -21,8 +21,7 @@ export class AuthResolver {
         .dataSources.authDS.findOrCreateAuthUser(authProviderUser.email);
       const accessToken = context.toolBox
         .dataSources.tokens.generateAccessToken(authUser.id);
-      const refreshToken = context.toolBox.
-        dataSources.tokens.generateRefreshToken(authUser.id);
+      const refreshToken = context.toolBox.dataSources.tokens.generateRefreshToken(authUser.id);
       context.res.cookie(
         'veryGoodCookie',
         refreshToken,

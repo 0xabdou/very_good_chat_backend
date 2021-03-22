@@ -129,10 +129,15 @@ describe('getFriendRequests', () => {
     expect(result).toStrictEqual(expected);
     verify(MockFriendDelegate.findMany(deepEqual({
       where: {
-        AND: {
-          confirmed: false,
-          OR: {user1ID: authUser1.id, user2ID: authUser1.id}
-        }
+        AND: [
+          {confirmed: false},
+          {
+            OR: [
+              {user1ID: authUser1.id},
+              {user2ID: authUser1.id}
+            ]
+          }
+        ]
       },
       orderBy: {date: 'desc'},
       include: {

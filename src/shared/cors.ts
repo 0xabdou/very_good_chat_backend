@@ -3,6 +3,7 @@ import {CorsOptions} from "cors";
 const whitelist = [
   "http://localhost:3000",
   "http://localhost:5000",
+  "http://192.168.1.5:3000",
   'https://studio.apollographql.com',
 ];
 
@@ -17,7 +18,10 @@ const corsOptions: CorsOptions = {
     if (origin && whitelist.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // allow all for now
+      callback(null, true);
+      return;
+      //callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
