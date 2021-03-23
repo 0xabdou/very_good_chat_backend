@@ -13,6 +13,7 @@ import errorInterceptor from "./shared/graphql/middlewares/error-interceptor";
 import Context, {ToolBox} from "./shared/context";
 import corsOptions from "./shared/cors";
 import FriendResolver from "./features/friend/graphql/resolver";
+import BadgeResolver from "./features/badge/graphql/resolver";
 
 const createApp = async (toolBox: ToolBox) => {
   const app = express();
@@ -26,7 +27,7 @@ const createApp = async (toolBox: ToolBox) => {
 
   // GraphQL server stuff
   const schema = await buildSchema({
-    resolvers: [AuthResolver, UserResolver, FriendResolver],
+    resolvers: [AuthResolver, UserResolver, FriendResolver, BadgeResolver],
     globalMiddlewares: [errorInterceptor],
     dateScalarMode: 'timestamp'
   });

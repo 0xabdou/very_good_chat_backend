@@ -1,4 +1,4 @@
-import {Ctx, Mutation, Query, Resolver} from "type-graphql";
+import {Arg, Ctx, Mutation, Query, Resolver} from "type-graphql";
 import {
   returnsBadge,
   returnsListOfBadges
@@ -14,7 +14,7 @@ export default class BadgeResolver {
   }
 
   @Mutation(returnsBadge)
-  updateBadge(@Ctx() context: Context, badgeName: BadgeName) {
+  updateBadge(@Ctx() context: Context, @Arg('badgeName', () => BadgeName) badgeName: BadgeName) {
     return context.toolBox.dataSources.badgeDS
       .updateBadge(context.userID!, badgeName);
   }

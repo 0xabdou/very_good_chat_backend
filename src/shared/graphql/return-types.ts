@@ -18,7 +18,7 @@ export const returnsFriendshipInfo = () => FriendshipInfo;
 export const returnsFriendship = () => Friendship;
 export const returnsFriendRequests = () => FriendRequests;
 export const returnsBadge = () => Badge;
-export const returnsListOfBadges= () => [Badge];
+export const returnsListOfBadges = () => [Badge];
 
 export const ofTypeGraphQLUpload = () => GraphQLUpload;
 export const ofTypeFriendshipStatus = () => FriendshipStatus;

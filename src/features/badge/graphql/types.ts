@@ -5,12 +5,12 @@ export enum BadgeName {
   FRIEND_REQUESTS = "FRIEND_REQUESTS"
 }
 
+registerEnumType(BadgeName, {name: 'BadgeName'});
+
 @ObjectType()
 export class Badge {
-  @Field()
+  @Field(() => BadgeName)
   badgeName!: BadgeName;
   @Field()
   lastOpened!: Date;
 }
-
-registerEnumType(BadgeName, {name: 'BadgeName'});
