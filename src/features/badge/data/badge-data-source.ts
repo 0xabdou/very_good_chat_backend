@@ -1,5 +1,5 @@
 import {Badge, BadgeName} from "../graphql/types";
-import {PrismaClient, Badge as PrismaBadge} from "@prisma/client";
+import {Badge as PrismaBadge, PrismaClient} from "@prisma/client";
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
 
@@ -11,7 +11,7 @@ export default class BadgeDataSource {
     this._prisma = prisma;
   }
 
-  async getUserBadges(userID: string) : Promise<Badge[]> {
+  async getUserBadges(userID: string): Promise<Badge[]> {
     let badges = await this._prisma.badge.findMany({where: {userID}});
     if (!badges.length) badges = await Promise.all(this._createBadges(userID));
     return badges.map(BadgeDataSource._getBadge);
@@ -30,9 +30,9 @@ export default class BadgeDataSource {
   }
 
   private _createBadges(userID: string) {
-    return Object.values(BadgeName).map(badgeName=> {
+    return Object.values(BadgeName).map(badgeName => {
       return this._prisma.badge.create({
-        data: {userID, badgeName,lastOpened: new Date()}
+        data: {userID, badgeName, lastOpened: new Date()}
       });
     });
   }
@@ -41,6 +41,6 @@ export default class BadgeDataSource {
     return {
       badgeName: BadgeName[badge.badgeName],
       lastOpened: badge.lastOpened
-    }
+    };
   }
 }

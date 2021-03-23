@@ -1,4 +1,4 @@
-import {Prisma, PrismaClient, Badge as PrismaBadge} from '@prisma/client';
+import {Badge as PrismaBadge, Prisma, PrismaClient} from '@prisma/client';
 
 import {
   anything,
@@ -15,10 +15,10 @@ import BadgeDataSource
 import {mockPrismaBadges} from "../../../mock-objects";
 
 const MockPrismaClient = mock<PrismaClient>();
-const MockBadgeDelegate = mock<Prisma.BadgeDelegate<any>>()
+const MockBadgeDelegate = mock<Prisma.BadgeDelegate<any>>();
 const userID = 'userIDDDDDD';
 const date = new Date();
-let spy : jest.SpyInstance;
+let spy: jest.SpyInstance;
 
 const badgeDS = new BadgeDataSource(instance(MockPrismaClient));
 
@@ -26,12 +26,12 @@ beforeAll(() => {
   when(MockPrismaClient.badge).thenReturn(instance(MockBadgeDelegate));
   spy = jest
     .spyOn(global, 'Date')
-    .mockImplementation(() => date as unknown as string)
+    .mockImplementation(() => date as unknown as string);
 });
 
 afterAll(() => {
   spy.mockRestore();
-})
+});
 
 beforeEach(() => {
   resetCalls(MockBadgeDelegate);
@@ -45,25 +45,28 @@ describe('_getBadge', () => {
   };
 
   it('should return the right object for NOTIFICATIONS', function () {
-    const input : PrismaBadge = {...basePrismaBadge};
-    const expectedOutput : Badge = {
+    const input: PrismaBadge = {...basePrismaBadge};
+    const expectedOutput: Badge = {
       badgeName: BadgeName[input.badgeName],
       lastOpened: input.lastOpened
-    }
-    const output =  BadgeDataSource._getBadge(input);
+    };
+    const output = BadgeDataSource._getBadge(input);
     expect(output).toStrictEqual(expectedOutput);
   });
 
   it('should return the right object for FRIEND_REQUESTS', function () {
-    const input : PrismaBadge = {...basePrismaBadge, badgeName: BadgeName.FRIEND_REQUESTS};
-    const expectedOutput : Badge = {
+    const input: PrismaBadge = {
+      ...basePrismaBadge,
+      badgeName: BadgeName.FRIEND_REQUESTS
+    };
+    const expectedOutput: Badge = {
       badgeName: BadgeName[input.badgeName],
       lastOpened: input.lastOpened
-    }
-    const output =  BadgeDataSource._getBadge(input);
+    };
+    const output = BadgeDataSource._getBadge(input);
     expect(output).toStrictEqual(expectedOutput);
   });
-})
+});
 
 describe('getUserBadges', () => {
   const act = () => badgeDS.getUserBadges(userID);

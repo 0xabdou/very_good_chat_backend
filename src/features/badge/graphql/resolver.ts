@@ -9,7 +9,7 @@ import Context from "../../../shared/context";
 @Resolver()
 export default class BadgeResolver {
   @Query(returnsListOfBadges)
-  getBadges(@Ctx() context: Context) : Promise<Badge[]>{
+  getBadges(@Ctx() context: Context): Promise<Badge[]> {
     return context.toolBox.dataSources.badgeDS.getUserBadges(context.userID!);
   }
 
