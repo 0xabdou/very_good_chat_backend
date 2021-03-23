@@ -43,3 +43,18 @@ model Friend {
    @@map("friends")
    @@unique([user1ID, user2ID])
 }
+
+model Badge {
+    user            AuthUser @relation(fields: [userID], references: [id])
+    userID          String
+    badgeName       BadgeName
+    lastOpened      DateTime
+
+    @@map("badges")
+    @@unique([userID, badgeName])
+}
+
+enum BadgeName {
+    NOTIFICATIONS
+    FRIEND_REQUESTS
+}

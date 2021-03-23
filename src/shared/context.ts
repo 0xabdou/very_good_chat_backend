@@ -7,6 +7,7 @@ import {UserValidators} from "../features/user/graphql/validators";
 import FileUtils from "./utils/file-utils";
 import FriendDataSource from "../features/friend/data/friend-data-source";
 import {IUploader} from "./apis/uploader";
+import BadgeDataSource from "../features/badge/data/badge-data-source";
 
 type Context = {
   req: Request,
@@ -27,6 +28,7 @@ export type DataSources = {
   userDS: UserDataSource,
   authDS: AuthDataSource,
   friendDS: FriendDataSource,
+  badgeDS: BadgeDataSource,
 }
 
 export type Validators = {

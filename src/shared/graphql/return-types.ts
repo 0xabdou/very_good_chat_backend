@@ -7,6 +7,7 @@ import {
   FriendshipInfo,
   FriendshipStatus
 } from "../../features/friend/graphql/types";
+import {Badge} from "../../features/badge/graphql/types";
 
 export const returnsString = () => String;
 export const returnsBoolean = () => Boolean;
@@ -16,6 +17,8 @@ export const returnsListOfUsers = () => [User];
 export const returnsFriendshipInfo = () => FriendshipInfo;
 export const returnsFriendship = () => Friendship;
 export const returnsFriendRequests = () => FriendRequests;
+export const returnsBadge = () => Badge;
+export const returnsListOfBadges= () => [Badge];
 
 export const ofTypeGraphQLUpload = () => GraphQLUpload;
 export const ofTypeFriendshipStatus = () => FriendshipStatus;

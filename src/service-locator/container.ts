@@ -13,6 +13,7 @@ import FileUtils from "../shared/utils/file-utils";
 import FriendDataSource from "../features/friend/data/friend-data-source";
 import Uploader, {IUploader} from "../shared/apis/uploader";
 import {Storage} from "@google-cloud/storage";
+import BadgeDataSource from "../features/badge/data/badge-data-source";
 
 const container = new Container();
 
@@ -34,6 +35,8 @@ export const initContainer = async () => {
   container.bind<UserDataSource>(TYPES.UserDataSource).to(UserDataSource);
   // Friend data source
   container.bind<FriendDataSource>(TYPES.FriendDataSource).to(FriendDataSource);
+  // Badge data source
+  container.bind<BadgeDataSource>(TYPES.BadgeDataSource).to(BadgeDataSource);
   // Shared APIS
   container.bind<IUploader>(TYPES.IUploader).to(Uploader);
 
@@ -45,6 +48,7 @@ export const initContainer = async () => {
     authDS: container.get(TYPES.AuthDataSource),
     userDS: container.get(TYPES.UserDataSource),
     friendDS: container.get(TYPES.FriendDataSource),
+    badgeDS: container.get(TYPES.BadgeDataSource),
   });
 
   // Context validators
