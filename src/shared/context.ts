@@ -8,6 +8,8 @@ import FileUtils from "./utils/file-utils";
 import FriendDataSource from "../features/friend/data/friend-data-source";
 import {IUploader} from "./apis/uploader";
 import BadgeDataSource from "../features/badge/data/badge-data-source";
+import NotificationDataSource
+  from "../features/notification/data/notification-data-source";
 
 type Context = {
   req: Request,
@@ -29,6 +31,7 @@ export type DataSources = {
   authDS: AuthDataSource,
   friendDS: FriendDataSource,
   badgeDS: BadgeDataSource,
+  notificationDS: NotificationDataSource
 }
 
 export type Validators = {

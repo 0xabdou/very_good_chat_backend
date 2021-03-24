@@ -14,6 +14,8 @@ import FriendDataSource from "../features/friend/data/friend-data-source";
 import Uploader, {IUploader} from "../shared/apis/uploader";
 import {Storage} from "@google-cloud/storage";
 import BadgeDataSource from "../features/badge/data/badge-data-source";
+import NotificationDataSource
+  from "../features/notification/data/notification-data-source";
 
 const container = new Container();
 
@@ -37,6 +39,8 @@ export const initContainer = async () => {
   container.bind<FriendDataSource>(TYPES.FriendDataSource).to(FriendDataSource);
   // Badge data source
   container.bind<BadgeDataSource>(TYPES.BadgeDataSource).to(BadgeDataSource);
+  // Notification data source
+  container.bind<NotificationDataSource>(TYPES.NotificationDataSource).to(NotificationDataSource);
   // Shared APIS
   container.bind<IUploader>(TYPES.IUploader).to(Uploader);
 
@@ -49,6 +53,7 @@ export const initContainer = async () => {
     userDS: container.get(TYPES.UserDataSource),
     friendDS: container.get(TYPES.FriendDataSource),
     badgeDS: container.get(TYPES.BadgeDataSource),
+    notificationDS: container.get(TYPES.NotificationDataSource),
   });
 
   // Context validators

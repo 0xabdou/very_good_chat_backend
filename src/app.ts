@@ -14,6 +14,7 @@ import Context, {ToolBox} from "./shared/context";
 import corsOptions from "./shared/cors";
 import FriendResolver from "./features/friend/graphql/resolver";
 import BadgeResolver from "./features/badge/graphql/resolver";
+import NotificationResolver from "./features/notification/graphql/resolver";
 
 const createApp = async (toolBox: ToolBox) => {
   const app = express();
@@ -27,7 +28,13 @@ const createApp = async (toolBox: ToolBox) => {
 
   // GraphQL server stuff
   const schema = await buildSchema({
-    resolvers: [AuthResolver, UserResolver, FriendResolver, BadgeResolver],
+    resolvers: [
+      AuthResolver,
+      UserResolver,
+      FriendResolver,
+      BadgeResolver,
+      NotificationResolver
+    ],
     globalMiddlewares: [errorInterceptor],
     dateScalarMode: 'timestamp'
   });

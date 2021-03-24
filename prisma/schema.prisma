@@ -11,17 +11,19 @@ generator client {
 }
 
 model AuthUser {
-    id              String @id @default(uuid())
-    email           String @unique
-    user            User?
-    friends1        Friend[] @relation(name: "friends1")
-    friends2        Friend[] @relation(name: "friends2")
+    id                  String @id @default(uuid())
+    email               String @unique
+    user                User?
+    friends1            Friend[] @relation(name: "friends1")
+    friends2            Friend[] @relation(name: "friends2")
+    notifications       Notification[] @relation(name: "notification_owner")
+    notificationFriend  Notification[] @relation(name: "notification_friend")
     @@map("auth_users")
 }
 
 model User {
     username            String @unique
-    name                String? @map("name")
+    name                String?
     photoURLSource      String? @map("photo_url_source")
     photoURLMedium      String? @map("photo_url_medium")
     photoURLSmall       String? @map("photo_url_small")
@@ -42,6 +44,23 @@ model Friend {
 
    @@map("friends")
    @@unique([user1ID, user2ID])
+}
+
+model Notification {
+    id          Int @id @default(autoincrement())
+    owner       AuthUser @relation(name: "notification_owner", fields: [ownerID], references: [id])
+    ownerID     String
+    type        NotificationType
+    date        DateTime
+    seen        Boolean @default(false)
+    // If the type is REQUEST_ACCEPTED
+    friend      AuthUser? @relation(name: "notification_friend", fields: [friendID], references: [id])
+    friendID    String?
+}
+
+enum NotificationType {
+    REQUEST_ACCEPTED
+    SYSTEM
 }
 
 model Badge {
