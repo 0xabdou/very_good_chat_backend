@@ -1,8 +1,8 @@
-import {AuthUser,
+import {
+  AuthUser,
   User as PrismaUser,
   Friend as PrismaFriend,
   Badge as PrismaBadge,
-  BadgeName as PrismaBadgeName
 } from '@prisma/client';
 import {AuthProviderUser} from "../src/features/auth/data/google-api";
 import {CreateUserArgs} from "../src/features/user/data/user-data-source";
@@ -37,11 +37,11 @@ export const mockGraphQLUser: User = {
   photoURLSmall: '/storage/auth_user_id_pp_small.png',
 };
 
-export const mockResizedPhotos : ResizedPhotos = {
+export const mockResizedPhotos: ResizedPhotos = {
   source: 'source',
   medium: 'medium',
   small: 'small'
-}
+};
 
 export const mockAuthProviderUser: AuthProviderUser = {
   email: 'provider@email.com',
@@ -55,28 +55,36 @@ export const mockCreateUserArgs: CreateUserArgs = {
   name: 'name',
 };
 
-export const mockFriend : PrismaFriend = {
+export const mockFriend: PrismaFriend = {
   id: 0,
   user1ID: 'user1ID',
   user2ID: 'user2ID',
   confirmed: false,
   date: new Date()
-}
+};
 
-export const mockFriendship : Friendship  = {
+export const mockFriendship: Friendship = {
   status: FriendshipStatus.FRIENDS,
   date: new Date()
-}
+};
 
 export const mockPrismaBadges: PrismaBadge[] = [
-  {userID: 'USERIDDDD', badgeName: BadgeName.FRIEND_REQUESTS, lastOpened: new Date()},
-  {userID: 'USERIDDDD', badgeName: BadgeName.NOTIFICATIONS, lastOpened: new Date()},
+  {
+    userID: 'USERIDDDD',
+    badgeName: BadgeName.FRIEND_REQUESTS,
+    lastOpened: new Date()
+  },
+  {
+    userID: 'USERIDDDD',
+    badgeName: BadgeName.NOTIFICATIONS,
+    lastOpened: new Date()
+  },
 ];
 
-export const mockTheDate = () : [jest.SpyInstance, Date] => {
+export const mockTheDate = (): [jest.SpyInstance, Date] => {
   const mocked = new Date();
   const spy = jest
     .spyOn(global, 'Date')
     .mockImplementation(() => mocked as unknown as string);
   return [spy, mocked];
-}
+};

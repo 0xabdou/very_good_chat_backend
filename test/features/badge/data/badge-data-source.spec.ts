@@ -12,12 +12,12 @@ import {
 import {Badge, BadgeName} from "../../../../src/features/badge/graphql/types";
 import BadgeDataSource
   from "../../../../src/features/badge/data/badge-data-source";
-import {mockTheDate, mockPrismaBadges} from "../../../mock-objects";
+import {mockPrismaBadges, mockTheDate} from "../../../mock-objects";
 
 const MockPrismaClient = mock<PrismaClient>();
 const MockBadgeDelegate = mock<Prisma.BadgeDelegate<any>>();
 const userID = 'userIDDDDDD';
-let date : Date;
+let date: Date;
 let spy: jest.SpyInstance;
 
 const badgeDS = new BadgeDataSource(instance(MockPrismaClient));
