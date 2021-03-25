@@ -12,7 +12,12 @@ import {
   returnsFriendship,
   returnsFriendshipInfo
 } from "../../../shared/graphql/return-types";
-import {FriendRequests, Friendship, FriendshipInfo} from "./types";
+import {
+  FriendRequests,
+  Friendship,
+  FriendshipInfo,
+  FriendshipStatus
+} from "./types";
 import Context from "../../../shared/context";
 import {GerUserArgs} from "../../user/graphql/types";
 import {ApolloError} from "apollo-server-express";
@@ -57,13 +62,19 @@ export default class FriendResolver {
 
   @Mutation(returnsFriendship)
   @UseMiddleware(isAuthenticated)
-  acceptFriendRequest(
+  async acceptFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
   ): Promise<Friendship> {
-    return context.toolBox.dataSources.friendDS.acceptFriendRequest(
+    const friendship = await context.toolBox.dataSources.friendDS.acceptFriendRequest(
       context.userID!, userID
     );
+    if (friendship.status === FriendshipStatus.FRIENDS) {
+      context.toolBox.dataSources.notificationDS.sendRequestAcceptedNotification(
+        context.userID!, userID
+      );
+    }
+    return friendship;
   }
 
   @Mutation(returnsFriendship)
@@ -71,8 +82,7 @@ export default class FriendResolver {
   declineFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
-  )
-    : Promise<Friendship> {
+  ): Promise<Friendship> {
     return context.toolBox.dataSources.friendDS.declineFriendRequest(
       context.userID!, userID
     );

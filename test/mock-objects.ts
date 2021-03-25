@@ -72,3 +72,11 @@ export const mockPrismaBadges: PrismaBadge[] = [
   {userID: 'USERIDDDD', badgeName: BadgeName.FRIEND_REQUESTS, lastOpened: new Date()},
   {userID: 'USERIDDDD', badgeName: BadgeName.NOTIFICATIONS, lastOpened: new Date()},
 ];
+
+export const mockTheDate = () : [jest.SpyInstance, Date] => {
+  const mocked = new Date();
+  const spy = jest
+    .spyOn(global, 'Date')
+    .mockImplementation(() => mocked as unknown as string);
+  return [spy, mocked];
+}

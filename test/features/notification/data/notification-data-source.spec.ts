@@ -17,7 +17,7 @@ import {
 } from "ts-mockito";
 import NotificationDataSource
   from "../../../../src/features/notification/data/notification-data-source";
-import {mockPrismaUser} from "../../../mock-objects";
+import {mockPrismaUser, mockTheDate} from "../../../mock-objects";
 import {
   Notification,
   NotificationType
@@ -28,14 +28,17 @@ import UserDataSource
 const MockPrismaClient = mock<PrismaClient>();
 const MockNotificationDelegate = mock<Prisma.NotificationDelegate<any>>();
 const userID = 'userIDDDDDD';
+let spy: jest.SpyInstance;
+let mockDate: Date;
 
 const notificationDS = new NotificationDataSource(instance(MockPrismaClient));
 
 beforeAll(() => {
   when(MockPrismaClient.notification).thenReturn(instance(MockNotificationDelegate));
+  [spy, mockDate] = mockTheDate();
 });
 
-beforeEach(() => {
+afterAll(() => {
   reset(MockNotificationDelegate);
 });
 
@@ -60,7 +63,7 @@ const prismaRANotification: PrismaNotification & ({
     }
   }
 };
-const GQLRAnotfication: Notification = {
+const GQLRANotification: Notification = {
   id: prismaRANotification.id,
   date: prismaRANotification.date,
   seen: prismaRANotification.seen,
@@ -71,15 +74,15 @@ const GQLRAnotfication: Notification = {
 describe('getNotifications', () => {
   it('should return notifications', async () => {
     // arrange
-
     when(MockNotificationDelegate.findMany(anything())).thenResolve([prismaRANotification]);
     // act
     const result = await notificationDS.getNotifications(userID);
     // assert
-    expect(result[0]).toStrictEqual(GQLRAnotfication);
+    expect(result[0]).toStrictEqual(GQLRANotification);
     verify(MockNotificationDelegate.findMany(deepEqual({
       where: {ownerID: userID},
-      include: {friend: {include: {user: true}}}
+      include: {friend: {include: {user: true}}},
+      orderBy: {date: 'desc'}
     }))).once();
   });
 });
@@ -112,7 +115,7 @@ describe('sendRequestAcceptedNotification', () => {
     // assert
     verify(MockNotificationDelegate.create(deepEqual({
       data: {
-        date: new Date(),
+        date: mockDate,
         type: NotificationType.REQUEST_ACCEPTED,
         ownerID: receiverID,
         friendID: userID,

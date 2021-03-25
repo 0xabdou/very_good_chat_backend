@@ -13,9 +13,12 @@ import {
   FriendshipInfo
 } from "../../../../src/features/friend/graphql/types";
 import {GerUserArgs} from "../../../../src/features/user/graphql/types";
+import NotificationDataSource
+  from "../../../../src/features/notification/data/notification-data-source";
 
 const MockFriendDS = mock<FriendDataSource>();
 const MockUserDS = mock<UserDataSource>();
+const MockNotificationDS = mock<NotificationDataSource>()
 const userID = 'user1ID';
 const user2ID = 'user2ID';
 
@@ -24,11 +27,18 @@ const context = {
   toolBox: {
     dataSources: {
       userDS: instance(MockUserDS),
-      friendDS: instance(MockFriendDS)
+      friendDS: instance(MockFriendDS),
+      notificationDS: instance(MockNotificationDS)
     }
   }
 } as Context;
 const resolver = new FriendResolver();
+
+beforeEach(() => {
+  resetCalls(MockUserDS);
+  resetCalls(MockFriendDS);
+  resetCalls(MockNotificationDS);
+})
 
 describe('getFriendRequests', () => {
   it('should return friend requests', async () => {
@@ -103,16 +113,17 @@ describe('sendFriendRequest', () => {
 });
 
 describe('acceptFriendRequest', () => {
-  it('should forward the call to friendDS.acceptFriendRequest', () => {
+  it('should accept the friend request and send a notification', async () => {
     // arrange
-    const promise = new Promise<Friendship>(r => r(mockFriendship));
     when(MockFriendDS.acceptFriendRequest(anything(), anything()))
-      .thenReturn(promise);
+      .thenResolve(mockFriendship);
     // act
-    const result = resolver.acceptFriendRequest(context, user2ID);
+    const result = await resolver.acceptFriendRequest(context, user2ID);
     // assert
-    expect(result).toBe(promise);
+    expect(result).toStrictEqual(mockFriendship);
     verify(MockFriendDS.acceptFriendRequest(userID, user2ID)).once();
+    verify(MockNotificationDS.sendRequestAcceptedNotification(userID, user2ID))
+      .once();
   });
 });
 

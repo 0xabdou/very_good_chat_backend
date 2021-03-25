@@ -15,7 +15,8 @@ export default class NotificationDataSource {
   async getNotifications(userID: string): Promise<Notification[]> {
     const notifications = await this._prisma.notification.findMany({
       where: {ownerID: userID},
-      include: {friend: {include: {user: true}}}
+      include: {friend: {include: {user: true}}},
+      orderBy: {date: 'desc'}
     });
     return notifications.map(n => {
       return {
