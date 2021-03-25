@@ -84,6 +84,24 @@ describe('getNotifications', () => {
   });
 });
 
+describe('markNotificationAsSeen', () => {
+  it('should mark a notification as seen', async () => {
+    // arrange
+    const notificationID = 1234;
+    when(MockNotificationDelegate.update(anything())).thenResolve(prismaRANotification);
+    // act
+    const result = await notificationDS.markNotificationAsSeen(userID, notificationID);
+    // assert
+    expect(result).toBe(true);
+    verify(MockNotificationDelegate.update(deepEqual({
+      where: {
+        id_ownerID: {id: notificationID, ownerID: userID}
+      },
+      data: {seen: true}
+    }))).once();
+  });
+});
+
 describe('sendRequestAcceptedNotification', () => {
   it('should send a notification', async () => {
     // arrange

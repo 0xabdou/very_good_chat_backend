@@ -56,6 +56,8 @@ model Notification {
     // If the type is REQUEST_ACCEPTED
     friend      AuthUser? @relation(name: "notification_friend", fields: [friendID], references: [id])
     friendID    String?
+
+    @@unique([id, ownerID])
 }
 
 enum NotificationType {

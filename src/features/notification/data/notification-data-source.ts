@@ -28,6 +28,16 @@ export default class NotificationDataSource {
     });
   }
 
+  async markNotificationAsSeen(userID: string, notificationID: number): Promise<boolean> {
+    await this._prisma.notification.update({
+      where: {
+        id_ownerID: {id: notificationID, ownerID: userID}
+      },
+      data: {seen: true}
+    });
+    return true;
+  }
+
   async sendRequestAcceptedNotification(senderID: string, receiverID: string): Promise<void> {
     await this._prisma.notification.create({
       data: {

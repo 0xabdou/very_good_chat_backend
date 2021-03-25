@@ -24,7 +24,7 @@ const context = {
 const resolver = new NotificationResolver();
 
 describe('getNotifications', () => {
-  it('should forward the call to notificationDS.getNotification', function () {
+  it('should forward the call to notificationDS.getNotification', () => {
     // arrange
     const notification = {type: NotificationType.REQUEST_ACCEPTED} as Notification;
     const promise = new Promise<Notification[]>(r => r([notification]));
@@ -34,5 +34,21 @@ describe('getNotifications', () => {
     // assert
     expect(result).toBe(promise);
     verify(MockNotificationDataSource.getNotifications(userID)).once();
+  });
+});
+
+describe('markNotificationAsSeen', () => {
+  it('should forward the call to notificationDS.markNotificationAsSeen', () => {
+    // arrange
+    const notificationID = 243324;
+    const promise = new Promise<boolean>(r => r(true));
+    when(MockNotificationDataSource.markNotificationAsSeen(anything(), anything()))
+      .thenReturn(promise);
+    // act
+    const result = resolver.markNotificationAsSeen(context, notificationID);
+    // assert
+    expect(result).toBe(promise);
+    verify(MockNotificationDataSource.markNotificationAsSeen(userID, notificationID))
+      .once();
   });
 });
