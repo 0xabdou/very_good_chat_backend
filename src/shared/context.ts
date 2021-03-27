@@ -10,6 +10,7 @@ import {IUploader} from "./apis/uploader";
 import BadgeDataSource from "../features/badge/data/badge-data-source";
 import NotificationDataSource
   from "../features/notification/data/notification-data-source";
+import BlockDataSource from "../features/block/data/block-data-source";
 
 type Context = {
   req: Request,
@@ -30,8 +31,9 @@ export type DataSources = {
   userDS: UserDataSource,
   authDS: AuthDataSource,
   friendDS: FriendDataSource,
+  blockDS: BlockDataSource,
   badgeDS: BadgeDataSource,
-  notificationDS: NotificationDataSource
+  notificationDS: NotificationDataSource,
 }
 
 export type Validators = {

@@ -27,13 +27,11 @@ export default class BlockDataSource {
     };
   }
 
-  async unblock(blockingID: string, blockedID: string): Promise<number> {
-    const block = await this._prisma.block.delete({
-      where: {
-        blockingID_blockedID: {blockedID, blockingID}
-      }
+  async unblock(blockingID: string, blockedID: string): Promise<string> {
+    await this._prisma.block.delete({
+      where: {blockingID_blockedID: {blockedID, blockingID}}
     });
-    return block.id;
+    return blockedID;
   }
 
   async getBlockedUsers(blockingID: string): Promise<Block[]> {

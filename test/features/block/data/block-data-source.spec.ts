@@ -82,7 +82,7 @@ describe('unblock', () => {
     // act
     const result = await blockDS.unblock(blockingID, blockedID);
     // assert
-    expect(result).toStrictEqual(mockPrismaBlock.id);
+    expect(result).toStrictEqual(blockedID);
     verify(MockBlockDelegate.delete(deepEqual({
       where: {blockingID_blockedID: {blockedID, blockingID}}
     }))).once();
