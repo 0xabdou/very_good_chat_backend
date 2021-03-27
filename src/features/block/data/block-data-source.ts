@@ -46,4 +46,20 @@ export default class BlockDataSource {
       };
     });
   }
+
+  async getBlockStatus(user1ID: string, user2ID: string)
+    : Promise<'blocking' | 'blocked' | undefined> {
+    const blocks = await this._prisma.block.findMany({
+      where: {
+        OR: [
+          {blockingID: user1ID, blockedID: user2ID},
+          {blockingID: user2ID, blockedID: user1ID}
+        ]
+      }
+    });
+    if (blocks.length) {
+      if (blocks[0].blockingID == user1ID) return 'blocking';
+      return 'blocked';
+    }
+  }
 }

@@ -1,10 +1,4 @@
-import {
-  AuthUser as PrismaAuthUser,
-  Block as PrismaBlock,
-  Prisma,
-  PrismaClient,
-  User as PrismaUser,
-} from '@prisma/client';
+import {Block as PrismaBlock, Prisma, PrismaClient,} from '@prisma/client';
 import {
   anything,
   deepEqual,
@@ -16,15 +10,11 @@ import {
 } from "ts-mockito";
 import BlockDataSource
   from "../../../../src/features/block/data/block-data-source";
-import {mockPrismaAuthUser, mockPrismaUser} from "../../../mock-objects";
-import {Block} from "../../../../src/features/block/graphql/types";
-import UserDataSource
-  from "../../../../src/features/user/data/user-data-source";
+import {mockBlock, mockPrismaBlock} from "../../../mock-objects";
 
 const MockPrismaClient = mock<PrismaClient>();
 const MockBlockDelegate = mock<Prisma.BlockDelegate<any>>();
-const blockingID = 'blockinggggggg';
-const blockedID = 'blockeddddddd';
+const {blockingID, blockedID} = mockPrismaBlock;
 
 const blockDS = new BlockDataSource(instance(MockPrismaClient));
 
@@ -36,25 +26,6 @@ beforeEach(() => {
   reset(MockBlockDelegate);
 });
 
-type PrismaBlockWithUser = PrismaBlock & ({
-  blocked: PrismaAuthUser & { user: PrismaUser }
-});
-
-const mockPrismaBlock: PrismaBlockWithUser = {
-  id: 1231,
-  blockedID,
-  blockingID,
-  blocked: {
-    ...mockPrismaAuthUser,
-    user: mockPrismaUser
-  },
-  date: new Date(),
-};
-
-const mockBlock: Block = {
-  user: UserDataSource._getGraphQLUser(mockPrismaBlock.blocked.user),
-  date: mockPrismaBlock.date
-};
 
 describe('block', () => {
   it('should block the user and return the block object', async () => {
@@ -101,5 +72,56 @@ describe('getBlockedUsers', () => {
       where: {blockingID},
       include: {blocked: {include: {user: true}}}
     }))).once();
+  });
+});
+
+describe('getBlockStatus', () => {
+  const user1ID = 'user1ID', user2ID = 'user2ID';
+
+  it('should return "blocking" if user1 is blocking user2', async () => {
+    // arrange
+    const block: PrismaBlock = {
+      id: 0,
+      blockingID: user1ID,
+      blockedID: user2ID,
+      date: new Date()
+    };
+    when(MockBlockDelegate.findMany(anything())).thenResolve([block]);
+    // act
+    const result = await blockDS.getBlockStatus(user1ID, user2ID);
+    // assert
+    expect(result).toBe('blocking');
+    verify(MockBlockDelegate.findMany(deepEqual({
+      where: {
+        OR: [
+          {blockingID: user1ID, blockedID: user2ID},
+          {blockingID: user2ID, blockedID: user1ID}
+        ]
+      }
+    }))).once();
+  });
+
+  it('should return "blocked" if user1 is blocked by user2', async () => {
+    // arrange
+    const block: PrismaBlock = {
+      id: 0,
+      blockingID: user2ID,
+      blockedID: user1ID,
+      date: new Date()
+    };
+    when(MockBlockDelegate.findMany(anything())).thenResolve([block]);
+    // act
+    const result = await blockDS.getBlockStatus(user1ID, user2ID);
+    // assert
+    expect(result).toBe('blocked');
+  });
+
+  it('should return undefined no one is blocking anyone', async () => {
+    // arrange
+    when(MockBlockDelegate.findMany(anything())).thenResolve([]);
+    // act
+    const result = await blockDS.getBlockStatus(user1ID, user2ID);
+    // assert
+    expect(result).toBeUndefined();
   });
 });

@@ -1,11 +1,13 @@
 import {
   AuthUser,
-  User as PrismaUser,
-  Friend as PrismaFriend,
+  AuthUser as PrismaAuthUser,
   Badge as PrismaBadge,
+  Block as PrismaBlock,
+  Friend as PrismaFriend,
+  User as PrismaUser,
 } from '@prisma/client';
 import {AuthProviderUser} from "../src/features/auth/data/google-api";
-import {CreateUserArgs} from "../src/features/user/data/user-data-source";
+import UserDataSource, {CreateUserArgs} from "../src/features/user/data/user-data-source";
 import {User} from '../src/features/user/graphql/types';
 import {
   Friendship,
@@ -13,6 +15,7 @@ import {
 } from "../src/features/friend/graphql/types";
 import {ResizedPhotos} from "../src/shared/utils/file-utils";
 import {BadgeName} from "../src/features/badge/graphql/types";
+import {Block} from "../src/features/block/graphql/types";
 
 export const mockPrismaAuthUser: AuthUser = {
   id: 'auth_user_id',
@@ -80,6 +83,26 @@ export const mockPrismaBadges: PrismaBadge[] = [
     lastOpened: new Date()
   },
 ];
+
+type PrismaBlockWithUser = PrismaBlock & ({
+  blocked: PrismaAuthUser & { user: PrismaUser }
+});
+
+export const mockPrismaBlock: PrismaBlockWithUser = {
+  id: 1231,
+  blockingID: 'blockingID',
+  blockedID: 'blockedID',
+  blocked: {
+    ...mockPrismaAuthUser,
+    user: mockPrismaUser
+  },
+  date: new Date(),
+};
+
+export const mockBlock: Block = {
+  user: UserDataSource._getGraphQLUser(mockPrismaBlock.blocked.user),
+  date: mockPrismaBlock.date
+};
 
 export const mockTheDate = (): [jest.SpyInstance, Date] => {
   const mocked = new Date();

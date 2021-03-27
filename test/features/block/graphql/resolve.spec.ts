@@ -6,20 +6,13 @@ import BlockDataSource
   from "../../../../src/features/block/data/block-data-source";
 import BlockResolver from "../../../../src/features/block/graphql/resolver";
 import {FriendshipStatus} from "../../../../src/features/friend/graphql/types";
-import {mockPrismaAuthUser, mockPrismaUser} from "../../../mock-objects";
+import {mockBlock, mockPrismaBlock} from "../../../mock-objects";
 import {Block} from "../../../../src/features/block/graphql/types";
-import UserDataSource
-  from "../../../../src/features/user/data/user-data-source";
-import {
-  AuthUser as PrismaAuthUser,
-  Block as PrismaBlock,
-  User as PrismaUser
-} from "@prisma/client";
 
 const MockFriendDS = mock<FriendDataSource>();
 const MockBlockDS = mock<BlockDataSource>();
-const blockingID = 'blockinggggg';
-const blockedID = 'blockeddddddd';
+const {blockingID, blockedID} = mockPrismaBlock;
+
 const context = {
   userID: blockingID,
   toolBox: {
@@ -31,25 +24,6 @@ const context = {
 } as Context;
 
 const resolver = new BlockResolver();
-
-type PrismaBlockWithUser = PrismaBlock & ({
-  blocked: PrismaAuthUser & { user: PrismaUser }
-});
-const mockPrismaBlock: PrismaBlockWithUser = {
-  id: 1231,
-  blockedID,
-  blockingID,
-  blocked: {
-    ...mockPrismaAuthUser,
-    user: mockPrismaUser
-  },
-  date: new Date(),
-};
-
-const mockBlock: Block = {
-  user: UserDataSource._getGraphQLUser(mockPrismaBlock.blocked.user),
-  date: mockPrismaBlock.date
-};
 
 beforeEach(() => {
   reset(MockFriendDS);
