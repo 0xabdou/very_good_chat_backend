@@ -75,7 +75,6 @@ export default class FriendDataSource {
   async getFriendship(
     currentUserID: string, otherUserID: string
   ): Promise<Friendship> {
-    // TODO: check if user is blocked/blocking before everything
     const results = await this._prisma.friend.findMany({
       where: {
         OR: [
@@ -97,7 +96,6 @@ export default class FriendDataSource {
   async sendFriendRequest(
     currentUserID: string, otherUserID: string
   ): Promise<Friendship> {
-    // TODO: should check if user is blocked/blocking and throw an error
     const existingFriend = await this._prisma.friend.findUnique({
       where: {
         user1ID_user2ID: {

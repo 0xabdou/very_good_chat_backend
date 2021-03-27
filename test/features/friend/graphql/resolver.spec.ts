@@ -10,15 +10,19 @@ import {mockFriendship, mockGraphQLUser} from "../../../mock-objects";
 import {
   FriendRequests,
   Friendship,
-  FriendshipInfo
+  FriendshipInfo,
+  FriendshipStatus
 } from "../../../../src/features/friend/graphql/types";
 import {GerUserArgs} from "../../../../src/features/user/graphql/types";
 import NotificationDataSource
   from "../../../../src/features/notification/data/notification-data-source";
+import BlockDataSource
+  from "../../../../src/features/block/data/block-data-source";
 
 const MockFriendDS = mock<FriendDataSource>();
 const MockUserDS = mock<UserDataSource>();
-const MockNotificationDS = mock<NotificationDataSource>()
+const MockBlockDS = mock<BlockDataSource>();
+const MockNotificationDS = mock<NotificationDataSource>();
 const userID = 'user1ID';
 const user2ID = 'user2ID';
 
@@ -28,6 +32,7 @@ const context = {
     dataSources: {
       userDS: instance(MockUserDS),
       friendDS: instance(MockFriendDS),
+      blockDS: instance(MockBlockDS),
       notificationDS: instance(MockNotificationDS)
     }
   }
@@ -37,8 +42,9 @@ const resolver = new FriendResolver();
 beforeEach(() => {
   resetCalls(MockUserDS);
   resetCalls(MockFriendDS);
+  resetCalls(MockBlockDS);
   resetCalls(MockNotificationDS);
-})
+});
 
 describe('getFriendRequests', () => {
   it('should return friend requests', async () => {
@@ -62,10 +68,6 @@ describe('getFriendshipInfo', () => {
   const args: GerUserArgs = {username: 'usernammmmmmmme'};
   const act = () => resolver.getFriendshipInfo(context, args);
 
-  beforeEach(() => {
-    resetCalls(MockUserDS);
-    resetCalls(MockFriendDS);
-  });
 
   it('should throw USER_NOT_FOUND if the user was not found', async () => {
     // arrange
@@ -80,9 +82,50 @@ describe('getFriendshipInfo', () => {
     expect(error?.extensions.code).toBe('USER_NOT_FOUND');
   });
 
-  it('should return friendship info if the user was found', async () => {
+  it(
+    'should return BLOCKED status if current user is blocked by the other user',
+    async () => {
+      // arrange
+      when(MockUserDS.getUser(anything())).thenResolve(mockGraphQLUser);
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve('blocked');
+      const expected: FriendshipInfo = {
+        friendship: {status: FriendshipStatus.BLOCKED},
+        user: mockGraphQLUser
+      };
+      // act
+      const result = await act();
+      // assert
+      expect(result).toStrictEqual(expected);
+      verify(MockUserDS.getUser(args)).once();
+      verify(MockBlockDS.getBlockStatus(userID, mockGraphQLUser.id)).once();
+      verify(MockFriendDS.getFriendship(anything(), anything())).never();
+    }
+  );
+
+  it(
+    'should return BLOCKING status if current user is blocking the other user',
+    async () => {
+      // arrange
+      when(MockUserDS.getUser(anything())).thenResolve(mockGraphQLUser);
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve('blocking');
+      const expected: FriendshipInfo = {
+        friendship: {status: FriendshipStatus.BLOCKING},
+        user: mockGraphQLUser
+      };
+      // act
+      const result = await act();
+      // assert
+      expect(result).toStrictEqual(expected);
+      verify(MockUserDS.getUser(args)).once();
+      verify(MockBlockDS.getBlockStatus(userID, mockGraphQLUser.id)).once();
+      verify(MockFriendDS.getFriendship(anything(), anything())).never();
+    }
+  );
+
+  it('should return friendship info if no one is blocking anyone', async () => {
     // arrange
     when(MockUserDS.getUser(anything())).thenResolve(mockGraphQLUser);
+    when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve(undefined);
     when(MockFriendDS.getFriendship(anything(), anything()))
       .thenResolve(mockFriendship);
     // act
@@ -99,17 +142,57 @@ describe('getFriendshipInfo', () => {
 });
 
 describe('sendFriendRequest', () => {
-  it('should forward the call to friendDS.sendFriendRequest', () => {
-    // arrange
-    const promise = new Promise<Friendship>(r => r(mockFriendship));
-    when(MockFriendDS.sendFriendRequest(anything(), anything()))
-      .thenReturn(promise);
-    // act
-    const result = resolver.sendFriendRequest(context, user2ID);
-    // assert
-    expect(result).toBe(promise);
-    verify(MockFriendDS.sendFriendRequest(userID, user2ID)).once();
-  });
+  const getThrownError = async (): Promise<ApolloError | undefined> => {
+    try {
+      await resolver.sendFriendRequest(context, user2ID);
+    } catch (e) {
+      return e;
+    }
+  };
+
+  it(
+    'should an error with the code "BLOCKING" if the current user is blocking the other user',
+    async () => {
+      // arrange
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve('blocking');
+      // act
+      const error = await getThrownError();
+      // assert
+      expect(error?.extensions.code).toBe('BLOCKING');
+      verify(MockBlockDS.getBlockStatus(userID, user2ID)).once();
+      verify(MockFriendDS.sendFriendRequest(anything(), anything())).never();
+    },
+  );
+
+  it(
+    'should an error with the code "BLOCKED" if the current user is blocked by the other user',
+    async () => {
+      // arrange
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve('blocked');
+      // act
+      const error = await getThrownError();
+      // assert
+      expect(error?.extensions.code).toBe('BLOCKED');
+      verify(MockBlockDS.getBlockStatus(userID, user2ID)).once();
+      verify(MockFriendDS.sendFriendRequest(anything(), anything())).never();
+    },
+  );
+
+  it(
+    'should send the friend request and return a friendship object if no one is blocking anyone',
+    async () => {
+      // arrange
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve(undefined);
+      when(MockFriendDS.sendFriendRequest(anything(), anything()))
+        .thenResolve(mockFriendship);
+      // act
+      const result = await resolver.sendFriendRequest(context, user2ID);
+      // assert
+      expect(result).toStrictEqual(mockFriendship);
+      verify(MockBlockDS.getBlockStatus(userID, user2ID)).once();
+      verify(MockFriendDS.sendFriendRequest(userID, user2ID)).once();
+    }
+  );
 });
 
 describe('acceptFriendRequest', () => {

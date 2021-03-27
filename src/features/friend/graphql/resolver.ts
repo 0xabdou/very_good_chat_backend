@@ -43,6 +43,15 @@ export default class FriendResolver {
     if (!user) {
       throw new ApolloError('User not found', 'USER_NOT_FOUND');
     }
+    const blockStatus = await context.toolBox.dataSources.blockDS.getBlockStatus(
+      context.userID!, user.id
+    );
+    if (blockStatus) {
+      const status: FriendshipStatus = blockStatus == 'blocked'
+        ? FriendshipStatus.BLOCKED
+        : FriendshipStatus.BLOCKING;
+      return {user, friendship: {status}};
+    }
     const friendship = await context.toolBox.dataSources.friendDS.getFriendship(
       context.userID!, user.id
     );
@@ -51,10 +60,11 @@ export default class FriendResolver {
 
   @Mutation(returnsFriendship)
   @UseMiddleware(isAuthenticated)
-  sendFriendRequest(
+  async sendFriendRequest(
     @Ctx() context: Context,
     @Arg('userID') userID: string
   ): Promise<Friendship> {
+    await this._checkBlockStatus(context, userID);
     return context.toolBox.dataSources.friendDS.sendFriendRequest(
       context.userID!, userID
     );
@@ -108,5 +118,16 @@ export default class FriendResolver {
     return context.toolBox.dataSources.friendDS.unfriend(
       context.userID!, userID
     );
+  }
+
+  async _checkBlockStatus(context: Context, userID: string) {
+    const blockStatus = await context.toolBox.dataSources.blockDS.getBlockStatus(
+      context.userID!, userID
+    );
+    if (blockStatus == 'blocked') {
+      throw new ApolloError('This user blocked you', 'BLOCKED');
+    } else if (blockStatus == 'blocking') {
+      throw new ApolloError('You blocked this user', 'BLOCKING');
+    }
   }
 }
