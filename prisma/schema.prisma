@@ -16,6 +16,8 @@ model AuthUser {
     user                User?
     friends1            Friend[] @relation(name: "friends1")
     friends2            Friend[] @relation(name: "friends2")
+    blockings           Block[] @relation(name: "blocking")
+    blockeds            Block[] @relation(name: "blocked")
     notifications       Notification[] @relation(name: "notification_owner")
     notificationFriend  Notification[] @relation(name: "notification_friend")
     @@map("auth_users")
@@ -44,6 +46,18 @@ model Friend {
 
    @@map("friends")
    @@unique([user1ID, user2ID])
+}
+
+model Block {
+    id          Int @id @default(autoincrement())
+    blocking    AuthUser @relation(name: "blocking", fields: [blockingID], references: [id])
+    blockingID  String @map("blocking_id")
+    blocked     AuthUser @relation(name: "blocked", fields: [blockedID], references: [id])
+    blockedID   String @map("blocked_id")
+    date        DateTime @updatedAt
+
+    @@map("blocks")
+    @@unique([blockingID, blockedID])
 }
 
 model Notification {
