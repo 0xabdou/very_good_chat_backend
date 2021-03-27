@@ -16,6 +16,7 @@ import {Storage} from "@google-cloud/storage";
 import BadgeDataSource from "../features/badge/data/badge-data-source";
 import NotificationDataSource
   from "../features/notification/data/notification-data-source";
+import BlockDataSource from "../features/block/data/block-data-source";
 
 const container = new Container();
 
@@ -39,6 +40,8 @@ export const initContainer = async () => {
   container.bind<FriendDataSource>(TYPES.FriendDataSource).to(FriendDataSource);
   // Badge data source
   container.bind<BadgeDataSource>(TYPES.BadgeDataSource).to(BadgeDataSource);
+  // Block data source
+  container.bind<BlockDataSource>(TYPES.BlockDataSource).to(BlockDataSource);
   // Notification data source
   container.bind<NotificationDataSource>(TYPES.NotificationDataSource).to(NotificationDataSource);
   // Shared APIS
@@ -53,6 +56,7 @@ export const initContainer = async () => {
     userDS: container.get(TYPES.UserDataSource),
     friendDS: container.get(TYPES.FriendDataSource),
     badgeDS: container.get(TYPES.BadgeDataSource),
+    blockDS: container.get(TYPES.BlockDataSource),
     notificationDS: container.get(TYPES.NotificationDataSource),
   });
 

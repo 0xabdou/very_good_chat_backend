@@ -11,6 +11,7 @@ const TYPES = {
   UserDataSource: Symbol('UserDataSource'),
   FriendDataSource: Symbol('FriendDataSource'),
   BadgeDataSource: Symbol('BadgeDataSource'),
+  BlockDataSource: Symbol('BlockDataSource'),
   NotificationDataSource: Symbol('NotificationDataSource'),
   DataSources: Symbol('DataSources'),
   Validators: Symbol('Validators'),

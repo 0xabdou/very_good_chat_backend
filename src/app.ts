@@ -15,6 +15,7 @@ import corsOptions from "./shared/cors";
 import FriendResolver from "./features/friend/graphql/resolver";
 import BadgeResolver from "./features/badge/graphql/resolver";
 import NotificationResolver from "./features/notification/graphql/resolver";
+import BlockResolver from "./features/block/graphql/resolver";
 
 const createApp = async (toolBox: ToolBox) => {
   const app = express();
@@ -33,6 +34,7 @@ const createApp = async (toolBox: ToolBox) => {
       UserResolver,
       FriendResolver,
       BadgeResolver,
+      BlockResolver,
       NotificationResolver
     ],
     globalMiddlewares: [errorInterceptor],
