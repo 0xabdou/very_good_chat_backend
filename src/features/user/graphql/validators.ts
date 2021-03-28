@@ -14,7 +14,7 @@ const userValidators : UserValidators = {
     if (!/^[a-z0-9._]+$/.test(username)) return 'Username can only contain letter, numbers, . and _';
   },
   validateName(name: string) {
-    if (name.length > 50) return 'Name must be 50 characters at most';
+    if (name.length > 20) return 'Name must be 50 characters at most';
   }
 };
 
