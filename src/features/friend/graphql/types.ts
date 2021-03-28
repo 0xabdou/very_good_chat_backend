@@ -44,3 +44,11 @@ export class FriendRequests {
   @Field(() => [FriendRequest])
   received!: FriendRequest[];
 }
+
+@ObjectType()
+export class Friend {
+  @Field()
+  user!: User;
+  @Field()
+  date!: Date;
+}

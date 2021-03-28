@@ -1,4 +1,4 @@
-import {AuthUser, Friend, Prisma, PrismaClient, User} from '@prisma/client';
+import {AuthUser, Friend as PrismaFriend, Prisma, PrismaClient, User} from '@prisma/client';
 import {
   anything,
   deepEqual,
@@ -11,6 +11,7 @@ import {
 } from "ts-mockito";
 import FriendDataSource, {friendErrors} from "../../../../src/features/friend/data/friend-data-source";
 import {
+  Friend,
   FriendRequests,
   Friendship,
   FriendshipStatus
@@ -18,6 +19,8 @@ import {
 import {mockFriend} from "../../../mock-objects";
 import {ApolloError} from "apollo-server-express";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime";
+import UserDataSource
+  from "../../../../src/features/user/data/user-data-source";
 
 const MockPrisma = mock<PrismaClient>();
 const MockFriendDelegate = mock<Prisma.FriendDelegate<any>>();
@@ -35,66 +38,95 @@ beforeEach(() => {
   resetCalls(MockFriendDelegate);
 });
 
-describe('getFriendRequests', () => {
-  const authUser1: AuthUser = {
-    id: 'id1',
-    email: 'email1'
-  };
-  const authUser2: AuthUser = {
-    id: 'id2',
-    email: 'email2'
-  };
-  const authUser3: AuthUser = {
-    id: 'id3',
-    email: 'email3'
-  };
-  const user1: User = {
-    authUserID: authUser1.id,
-    username: 'username',
-    name: 'name name',
-    photoURLSmall: null,
-    photoURLSource: null,
-    photoURLMedium: null
-  };
-  const user2: User = {
-    authUserID: authUser2.id,
-    username: 'username2',
-    name: 'name name2',
-    photoURLSmall: null,
-    photoURLSource: null,
-    photoURLMedium: null
-  };
-  const user3: User = {
-    authUserID: authUser3.id,
-    username: 'username3',
-    name: 'name name3',
-    photoURLSmall: null,
-    photoURLSource: null,
-    photoURLMedium: null
-  };
-  type FriendUser = Friend & {
-    user1: AuthUser & { user: User },
-    user2: AuthUser & { user: User },
-  };
-  const sentReq: FriendUser = {
-    id: 0,
-    user1ID: authUser1.id,
-    user2ID: authUser2.id,
-    user1: {...authUser1, user: user1},
-    user2: {...authUser2, user: user2},
-    date: new Date(),
-    confirmed: false
-  };
-  const receivedReq: FriendUser = {
-    id: 1,
-    user1ID: authUser3.id,
-    user2ID: authUser1.id,
-    user1: {...authUser3, user: user3},
-    user2: {...authUser1, user: user1},
-    date: new Date(),
-    confirmed: false
-  };
+const authUser1: AuthUser = {
+  id: 'id1',
+  email: 'email1'
+};
+const authUser2: AuthUser = {
+  id: 'id2',
+  email: 'email2'
+};
+const authUser3: AuthUser = {
+  id: 'id3',
+  email: 'email3'
+};
+const user1: User = {
+  authUserID: authUser1.id,
+  username: 'username',
+  name: 'name name',
+  photoURLSmall: null,
+  photoURLSource: null,
+  photoURLMedium: null
+};
+const user2: User = {
+  authUserID: authUser2.id,
+  username: 'username2',
+  name: 'name name2',
+  photoURLSmall: null,
+  photoURLSource: null,
+  photoURLMedium: null
+};
+const user3: User = {
+  authUserID: authUser3.id,
+  username: 'username3',
+  name: 'name name3',
+  photoURLSmall: null,
+  photoURLSource: null,
+  photoURLMedium: null
+};
+type FriendUser = PrismaFriend & {
+  user1: AuthUser & { user: User },
+  user2: AuthUser & { user: User },
+};
+const sentReq: FriendUser = {
+  id: 0,
+  user1ID: authUser1.id,
+  user2ID: authUser2.id,
+  user1: {...authUser1, user: user1},
+  user2: {...authUser2, user: user2},
+  date: new Date(),
+  confirmed: false
+};
+const receivedReq: FriendUser = {
+  id: 1,
+  user1ID: authUser3.id,
+  user2ID: authUser1.id,
+  user1: {...authUser3, user: user3},
+  user2: {...authUser1, user: user1},
+  date: new Date(),
+  confirmed: false
+};
 
+describe('getFriends', () => {
+  it('should return a list of friends', async () => {
+    // arrange
+    const friend1 = {...receivedReq, confirmed: true} ;
+    const friend2 = {...sentReq, confirmed: true} ;
+    const userID = authUser1.id;
+    const expected : Friend[] = [
+      {
+        user: UserDataSource._getGraphQLUser(friend1.user1.user),
+        date: friend1.date
+      },
+      {
+        user: UserDataSource._getGraphQLUser(friend2.user2.user),
+        date: friend2.date
+      }
+    ];
+    when(MockFriendDelegate.findMany(anything())).thenResolve([friend1, friend2]);
+    // act
+    const result = await friendDS.getFriends(userID);
+    // assert
+    expect(result).toStrictEqual(expected);
+    verify(MockFriendDelegate.findMany(deepEqual({
+      where: {AND: [{confirmed: true}, {OR: [{user1ID: userID}, {user2ID: userID}]}]},
+      orderBy: {date: 'desc'},
+      include: {user2: {include: {user: true}}, user1: {include: {user: true}}}
+    }))).once();
+  });
+});
+
+describe('getFriendRequests', () => {
   it('should return a list of friend requests', async () => {
     // arrange
     when(MockFriendDelegate.findMany(anything()))
@@ -168,7 +200,7 @@ describe('geFriendshipStatus', () => {
 
   it('should return `FRIENDS` if the users are friends', async () => {
     // arrange
-    const friend: Friend = {
+    const friend: PrismaFriend = {
       id: 0,
       user1ID,
       user2ID,
@@ -187,7 +219,7 @@ describe('geFriendshipStatus', () => {
 
   it('should return `REQUEST_SENT` if the current user sent a request', async () => {
     // arrange
-    const friend: Friend = {
+    const friend: PrismaFriend = {
       id: 0,
       user1ID,
       user2ID,
@@ -207,7 +239,7 @@ describe('geFriendshipStatus', () => {
   it('should return `REQUEST_RECEIVED` if the current user received a request',
     async () => {
       // arrange
-      const friend: Friend = {
+      const friend: PrismaFriend = {
         id: 0,
         user1ID: user2ID,
         user2ID: user1ID,
@@ -244,7 +276,7 @@ describe('sendFriendRequest', () => {
     'should throw ALREADY_FRIENDS if the users are already friends',
     async () => {
       // arrange
-      const friend: Friend = {...mockFriend, confirmed: true};
+      const friend: PrismaFriend = {...mockFriend, confirmed: true};
       when(MockFriendDelegate.findUnique(anything())).thenResolve(friend);
       // act
       const error = await getThrownError();
@@ -266,7 +298,7 @@ describe('sendFriendRequest', () => {
     'should throw REQUEST_RECEIVED if the request was already received',
     async () => {
       // arrange
-      const friend: Friend = {...mockFriend, confirmed: false};
+      const friend: PrismaFriend = {...mockFriend, confirmed: false};
       when(MockFriendDelegate.findUnique(anything())).thenResolve(friend);
       // act
       const error = await getThrownError();
@@ -423,7 +455,7 @@ describe('cancelFriendRequest', () => {
     'should throw ALREADY_FRIENDS if the users are already friends',
     async () => {
       // arrange
-      const friend: Friend = {...mockFriend, confirmed: true};
+      const friend: PrismaFriend = {...mockFriend, confirmed: true};
       when(MockFriendDelegate.findUnique(anything())).thenResolve(friend);
       // act
       const error = await getThrownError();

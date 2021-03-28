@@ -1,14 +1,15 @@
-import {PrismaClient, User as PrismaUser} from '@prisma/client';
+import {PrismaClient} from '@prisma/client';
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
 import {
+  Friend,
   FriendRequest,
   FriendRequests,
   Friendship,
   FriendshipStatus
 } from "../graphql/types";
 import {ApolloError} from "apollo-server-express";
-import {User} from "../../user/graphql/types";
+import UserDataSource from "../../user/data/user-data-source";
 
 export const friendErrors = {
   REQUEST_RECEIVED: 'REQUEST_RECEIVED',
@@ -22,6 +23,33 @@ export default class FriendDataSource {
 
   constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
     this._prisma = prisma;
+  }
+
+  async getFriends(userID: string): Promise<Friend[]> {
+    const friends = await this._prisma.friend.findMany({
+      where: {
+        AND: [
+          {confirmed: true},
+          {
+            OR: [
+              {user1ID: userID},
+              {user2ID: userID}
+            ]
+          }
+        ]
+      },
+      orderBy: {date: 'desc'},
+      include: {
+        user2: {include: {user: true}},
+        user1: {include: {user: true}},
+      }
+    });
+    return friends.map(friend => {
+      const user = UserDataSource._getGraphQLUser(
+        userID == friend.user1ID ? friend.user2.user! : friend.user1.user!
+      );
+      return {user, date: friend.date};
+    });
   }
 
   async getFriendRequests(userID: string): Promise<FriendRequests> {
@@ -48,28 +76,17 @@ export default class FriendDataSource {
     friends.forEach(friend => {
       if (friend.user1ID == userID) {
         sent.push({
-          user: this._primaToGraphQLUser(friend.user2.user!),
+          user: UserDataSource._getGraphQLUser(friend.user2.user!),
           date: friend.date
         });
       } else {
         received.push({
-          user: this._primaToGraphQLUser(friend.user1.user!),
+          user: UserDataSource._getGraphQLUser(friend.user1.user!),
           date: friend.date
         });
       }
     });
     return {sent, received};
-  }
-
-  _primaToGraphQLUser(user: PrismaUser): User {
-    return {
-      id: user.authUserID,
-      username: user.username,
-      name: user.name ?? undefined,
-      photoURLSource: user.photoURLSource ?? undefined,
-      photoURLMedium: user.photoURLMedium ?? undefined,
-      photoURLSmall: user.photoURLSmall ?? undefined,
-    };
   }
 
   async getFriendship(
