@@ -13,6 +13,7 @@ import {
   returnsFriendshipInfo
 } from "../../../shared/graphql/return-types";
 import {
+  Friend,
   FriendRequests,
   Friendship,
   FriendshipInfo,
@@ -25,6 +26,12 @@ import isAuthenticated from "../../auth/graphql/is-authenticated";
 
 @Resolver()
 export default class FriendResolver {
+
+  @Query(() => [Friend])
+  @UseMiddleware(isAuthenticated)
+  getFriends(@Ctx() context: Context): Promise<Friend[]> {
+    return context.toolBox.dataSources.friendDS.getFriends(context.userID!);
+  }
 
   @Query(returnsFriendRequests)
   @UseMiddleware(isAuthenticated)

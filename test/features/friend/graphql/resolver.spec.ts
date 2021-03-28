@@ -8,6 +8,7 @@ import FriendResolver from "../../../../src/features/friend/graphql/resolver";
 import {ApolloError} from "apollo-server-express";
 import {mockFriendship, mockGraphQLUser} from "../../../mock-objects";
 import {
+  Friend,
   FriendRequests,
   Friendship,
   FriendshipInfo,
@@ -44,6 +45,19 @@ beforeEach(() => {
   resetCalls(MockFriendDS);
   resetCalls(MockBlockDS);
   resetCalls(MockNotificationDS);
+});
+
+describe('getFriends', () => {
+  it('should forward the call to friendDS', () => {
+    // arrange
+    const promise = new Promise<Friend[]>(r => r([]));
+    when(MockFriendDS.getFriends(anything())).thenReturn(promise);
+    // act
+    const result = resolver.getFriends(context);
+    // assert
+    expect(result).toBe(promise);
+    verify(MockFriendDS.getFriends(userID)).once();
+  });
 });
 
 describe('getFriendRequests', () => {
