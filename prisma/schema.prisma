@@ -29,6 +29,7 @@ model User {
     photoURLSource      String? @map("photo_url_source")
     photoURLMedium      String? @map("photo_url_medium")
     photoURLSmall       String? @map("photo_url_small")
+    activeStatus        Boolean @default(true)
     lastSeen            DateTime @updatedAt @map("last_seen")
     authUser            AuthUser @relation(fields: [authUserID], references: [id])
     authUserID          String @unique @map("auth_user")

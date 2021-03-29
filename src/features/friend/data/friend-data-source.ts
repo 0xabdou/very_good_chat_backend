@@ -45,10 +45,17 @@ export default class FriendDataSource {
       }
     });
     return friends.map(friend => {
-      const user = UserDataSource._getGraphQLUser(
-        userID == friend.user1ID ? friend.user2.user! : friend.user1.user!
-      );
-      return {user, date: friend.date};
+      const friendUser =
+        userID == friend.user1ID ? friend.user2.user! : friend.user1.user!;
+      const user = UserDataSource._getGraphQLUser(friendUser);
+      const includeLastSeen =
+        friend.user1.user!.activeStatus
+        && friend.user2.user!.activeStatus;
+      return {
+        user,
+        friendshipDate: friend.date,
+        lastSeen: includeLastSeen ? friendUser.lastSeen : undefined
+      };
     });
   }
 

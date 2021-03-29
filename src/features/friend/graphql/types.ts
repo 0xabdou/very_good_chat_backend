@@ -50,5 +50,7 @@ export class Friend {
   @Field()
   user!: User;
   @Field()
-  date!: Date;
+  friendshipDate!: Date;
+  @Field({nullable: true})
+  lastSeen?: Date;
 }

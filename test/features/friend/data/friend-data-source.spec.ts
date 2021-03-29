@@ -1,4 +1,10 @@
-import {AuthUser, Friend as PrismaFriend, Prisma, PrismaClient, User} from '@prisma/client';
+import {
+  AuthUser,
+  Friend as PrismaFriend,
+  Prisma,
+  PrismaClient,
+  User
+} from '@prisma/client';
 import {
   anything,
   deepEqual,
@@ -56,7 +62,9 @@ const user1: User = {
   name: 'name name',
   photoURLSmall: null,
   photoURLSource: null,
-  photoURLMedium: null
+  photoURLMedium: null,
+  activeStatus: true,
+  lastSeen: new Date(),
 };
 const user2: User = {
   authUserID: authUser2.id,
@@ -64,7 +72,9 @@ const user2: User = {
   name: 'name name2',
   photoURLSmall: null,
   photoURLSource: null,
-  photoURLMedium: null
+  photoURLMedium: null,
+  activeStatus: true,
+  lastSeen: new Date(),
 };
 const user3: User = {
   authUserID: authUser3.id,
@@ -72,7 +82,9 @@ const user3: User = {
   name: 'name name3',
   photoURLSmall: null,
   photoURLSource: null,
-  photoURLMedium: null
+  photoURLMedium: null,
+  activeStatus: false,
+  lastSeen: new Date(),
 };
 type FriendUser = PrismaFriend & {
   user1: AuthUser & { user: User },
@@ -98,19 +110,65 @@ const receivedReq: FriendUser = {
 };
 
 describe('getFriends', () => {
-  it('should return a list of friends', async () => {
+  const userID = authUser1.id;
+
+  it('should return a list of friends (active status enabled)', async () => {
     // arrange
-    const friend1 = {...receivedReq, confirmed: true} ;
-    const friend2 = {...sentReq, confirmed: true} ;
-    const userID = authUser1.id;
-    const expected : Friend[] = [
+    const friend1 = {...sentReq, confirmed: true};
+    const friend2 = {...receivedReq, confirmed: true};
+    const expected: Friend[] = [
       {
-        user: UserDataSource._getGraphQLUser(friend1.user1.user),
-        date: friend1.date
+        user: UserDataSource._getGraphQLUser(friend1.user2.user),
+        friendshipDate: friend1.date,
+        lastSeen: friend1.user2.user.lastSeen
       },
       {
-        user: UserDataSource._getGraphQLUser(friend2.user2.user),
-        date: friend2.date
+        user: UserDataSource._getGraphQLUser(friend2.user1.user),
+        friendshipDate: friend2.date,
+        lastSeen: undefined
+      }
+    ];
+    when(MockFriendDelegate.findMany(anything())).thenResolve([friend1, friend2]);
+    // act
+    const result = await friendDS.getFriends(userID);
+    // assert
+    expect(result).toStrictEqual(expected);
+    verify(MockFriendDelegate.findMany(deepEqual({
+      where: {AND: [{confirmed: true}, {OR: [{user1ID: userID}, {user2ID: userID}]}]},
+      orderBy: {date: 'desc'},
+      include: {user2: {include: {user: true}}, user1: {include: {user: true}}}
+    }))).once();
+  });
+
+  it('should return a list of friends (active status disabled)', async () => {
+    const user = {
+      ...sentReq.user1,
+      user: {
+        ...sentReq.user1.user,
+        activeStatus: false
+      }
+    };
+    const friend1 = {
+      ...sentReq,
+      user1: user,
+      confirmed: true
+    };
+    const friend2 = {
+      ...receivedReq,
+      user2: user,
+      confirmed: true
+    };
+    // arrange
+    const expected: Friend[] = [
+      {
+        user: UserDataSource._getGraphQLUser(friend1.user2.user),
+        friendshipDate: friend1.date,
+        lastSeen: undefined
+      },
+      {
+        user: UserDataSource._getGraphQLUser(friend2.user1.user),
+        friendshipDate: friend2.date,
+        lastSeen: undefined
       }
     ];
     when(MockFriendDelegate.findMany(anything())).thenResolve([friend1, friend2]);
