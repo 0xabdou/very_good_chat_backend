@@ -73,6 +73,15 @@ export default class UserDataSource {
     return users.map(u => UserDataSource._getGraphQLUser(u));
   }
 
+  async updateLastSeen(userID: string): Promise<Date> {
+    const lastSeen = new Date();
+    await this._prisma.user.update({
+      where: {authUserID: userID},
+      data: {lastSeen}
+    });
+    return lastSeen;
+  }
+
   static _getGraphQLUser(user: PrismaUser): User {
     return {
       id: user.authUserID,

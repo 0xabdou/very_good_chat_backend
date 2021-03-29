@@ -12,12 +12,14 @@ import UserDataSource, {UpdateUserArgs} from "../../../../src/features/user/data
 import {
   mockCreateUserArgs,
   mockGraphQLUser,
-  mockPrismaUser
+  mockPrismaUser,
+  mockTheDate
 } from "../../../mock-objects";
 import {GerUserArgs} from "../../../../src/features/user/graphql/types";
 
 const MockPrismaClient = mock<PrismaClient>();
 const MockUserDelegate = mock<Prisma.UserDelegate<any>>();
+let [spy, mockDate] = mockTheDate();
 
 const userDS = new UserDataSource(instance(MockPrismaClient));
 
@@ -27,6 +29,10 @@ beforeAll(() => {
 
 beforeEach(() => {
   resetCalls(MockUserDelegate);
+});
+
+afterAll(() => {
+  spy.mockRestore();
 });
 
 describe('getUser', () => {
@@ -131,12 +137,14 @@ describe('createUser', () => {
     const result = await userDS.createUser(mockCreateUserArgs);
     // assert
     verify(MockUserDelegate.create(
-      deepEqual({data: {
-        ...mockCreateUserArgs,
+      deepEqual({
+        data: {
+          ...mockCreateUserArgs,
           photoURLSource: undefined,
           photoURLMedium: undefined,
           photoURLSmall: undefined,
-        }}))
+        }
+      }))
     ).once();
     expect(result).toStrictEqual(mockGraphQLUser);
   });
@@ -185,6 +193,22 @@ describe('findUsers', () => {
         ]
       }
     }))).once();
+  });
+});
+
+describe('updateLastSeen', () => {
+  it('should update last seen date', async () => {
+    // arrange
+    const userID = 'userIIIIIIDDDDDD';
+    const lastSeen = mockDate;
+    // act
+    const result = await userDS.updateLastSeen(userID);
+    // assert
+    verify(MockUserDelegate.update(deepEqual({
+      where: {authUserID: userID},
+      data: {lastSeen}
+    }))).once();
+    expect(result).toBe(lastSeen);
   });
 });
 
