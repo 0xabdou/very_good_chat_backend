@@ -23,7 +23,7 @@ import {
 import {FileUpload} from "graphql-upload";
 import {IUploader} from "../../../../src/shared/apis/uploader";
 
-const MockUserDataSource = mock<UserDataSource>();
+const MockUserDS = mock<UserDataSource>();
 const MockUserValidators = mock<UserValidators>();
 const MockUploader = mock<IUploader>();
 const MockFileUtils = mock<FileUtils>();
@@ -38,7 +38,7 @@ const context = {
   userID,
   toolBox: {
     dataSources: {
-      userDS: instance(MockUserDataSource),
+      userDS: instance(MockUserDS),
       uploader: instance(MockUploader),
     },
     validators: {
@@ -53,7 +53,7 @@ const context = {
 const resolver = new UserResolver();
 
 beforeEach(() => {
-  resetCalls(MockUserDataSource);
+  resetCalls(MockUserDS);
   resetCalls(MockUserValidators);
   resetCalls(MockUploader);
   resetCalls(MockFileUtils);
@@ -62,7 +62,7 @@ beforeEach(() => {
 describe('me', () => {
   it('should throw an error if the user is not found', async () => {
     // arrange
-    when(MockUserDataSource.getUser(anything())).thenResolve(null);
+    when(MockUserDS.getUser(anything())).thenResolve(null);
     // act
     const result = await (async () => {
       try {
@@ -77,7 +77,7 @@ describe('me', () => {
 
   it('should return the user if it exists', async () => {
     // arrange
-    when(MockUserDataSource.getUser(anything())).thenResolve(mockGraphQLUser);
+    when(MockUserDS.getUser(anything())).thenResolve(mockGraphQLUser);
     // act
     const result = await resolver.me(context);
     // assert
@@ -104,11 +104,11 @@ describe('register', () => {
 
   beforeEach(() => {
     reset(MockUserValidators);
-    when(MockUserDataSource.isUsernameTaken(anything())).thenResolve(false);
+    when(MockUserDS.isUsernameTaken(anything())).thenResolve(false);
   });
 
   beforeAll(() => {
-    when(MockUserDataSource.createUser(anything()))
+    when(MockUserDS.createUser(anything()))
       .thenResolve(mockGraphQLUser);
   });
 
@@ -140,11 +140,11 @@ describe('register', () => {
 
   it('should throw an error if the username is taken', async () => {
     // arrange
-    when(MockUserDataSource.isUsernameTaken(anything())).thenResolve(true);
+    when(MockUserDS.isUsernameTaken(anything())).thenResolve(true);
     // act
     const error = await getThrownError();
     // assert
-    verify(MockUserDataSource.isUsernameTaken(creation.username)).once();
+    verify(MockUserDS.isUsernameTaken(creation.username)).once();
     expect(error.extensions.code).toBe('USERNAME_TAKEN');
   });
 
@@ -210,11 +210,11 @@ describe('register', () => {
       .thenResolve(path);
     when(MockFileUtils.generateResizedPhotos(anything()))
       .thenResolve(mockResizedPhotos);
-    const uploaded : ResizedPhotos = {
+    const uploaded: ResizedPhotos = {
       source: 'uploaded_source',
       medium: 'uploaded_medium',
       small: 'uploaded_small'
-    }
+    };
     when(MockUploader.uploadAvatar(deepEqual({
       userID, photoPath: mockResizedPhotos.source
     }))).thenResolve(uploaded.source);
@@ -227,7 +227,7 @@ describe('register', () => {
     // act
     const result = await act();
     // assert
-    verify(MockUserDataSource.createUser(deepEqual({
+    verify(MockUserDS.createUser(deepEqual({
       authUserID: userID,
       username: creation.username,
       name: creation.name ?? undefined,
@@ -258,9 +258,9 @@ describe('updateUser', () => {
 
   beforeEach(() => {
     reset(MockUserValidators);
-    when(MockUserDataSource.isUsernameTaken(anything())).thenResolve(false);
+    when(MockUserDS.isUsernameTaken(anything())).thenResolve(false);
     when(MockFileUtils.saveTempPhoto(anything())).thenResolve(photoURL);
-    when(MockUserDataSource.updateUser(anything())).thenResolve(mockGraphQLUser);
+    when(MockUserDS.updateUser(anything())).thenResolve(mockGraphQLUser);
   });
 
   it('should throw input error if the username is invalid', async () => {
@@ -277,7 +277,7 @@ describe('updateUser', () => {
 
   it('should throw USERNAME_TAKEN error if the username is taken', async () => {
     // arrange
-    when(MockUserDataSource.isUsernameTaken(anything()))
+    when(MockUserDS.isUsernameTaken(anything()))
       .thenResolve(true);
     // act
     const error = await getThrownError();
@@ -376,11 +376,11 @@ describe('updateUser', () => {
       .thenResolve(path);
     when(MockFileUtils.generateResizedPhotos(anything()))
       .thenResolve(mockResizedPhotos);
-    const uploaded : ResizedPhotos = {
+    const uploaded: ResizedPhotos = {
       source: 'uploaded_source',
       medium: 'uploaded_medium',
       small: 'uploaded_small'
-    }
+    };
     when(MockUploader.uploadAvatar(deepEqual({
       userID, photoPath: mockResizedPhotos.source
     }))).thenResolve(uploaded.source);
@@ -394,16 +394,44 @@ describe('updateUser', () => {
     const result = await resolver.updateUser(context, up);
     // assert
     expect(result).toStrictEqual(mockGraphQLUser);
-    verify(MockUserDataSource.updateUser(deepEqual({
+    verify(MockUserDS.updateUser(deepEqual({
       authUserID: userID,
       username: up.username,
       name: up.name,
       deleteName: !!up.deleteName,
-      photo:uploaded,
+      photo: uploaded,
       deletePhoto: !!up.deletePhoto,
     }))).once();
     expect(result).toStrictEqual(mockGraphQLUser);
-  })
+  });
+});
+
+describe('updateActiveStatus', () => {
+  it('should forward the call to userDS.updateActiveStatus', () => {
+    // arrange
+    const activeStatus = false;
+    const promise = new Promise<boolean>(r => r(activeStatus));
+    when(MockUserDS.updateActiveStatus(anything(), anything()))
+      .thenReturn(promise);
+    // act
+    const result = resolver.updateActiveStatus(context, activeStatus);
+    // assert
+    expect(result).toBe(promise);
+    verify(MockUserDS.updateActiveStatus(userID, activeStatus)).once();
+  });
+});
+
+describe('updateLastSeen', () => {
+  it('should forward the call to userDS.updateLastSeen', () => {
+    // arrange
+    const promise = new Promise<Date>(r => r(new Date()));
+    when(MockUserDS.updateLastSeen(anything())).thenReturn(promise);
+    // act
+    const result = resolver.updateLastSeen(context);
+    // assert
+    expect(result).toBe(promise);
+    verify(MockUserDS.updateLastSeen(userID)).once();
+  });
 });
 
 describe('checkUsernameExistence', () => {
@@ -411,12 +439,12 @@ describe('checkUsernameExistence', () => {
     // arrange
     const promise = new Promise<boolean>(r => r(true));
     const username = 'userammmmmmmmeeeee';
-    when(MockUserDataSource.isUsernameTaken(anything())).thenReturn(promise);
+    when(MockUserDS.isUsernameTaken(anything())).thenReturn(promise);
     // act
     const result = resolver.checkUsernameExistence(context, username);
     // assert
     expect(result).toBe(promise);
-    verify(MockUserDataSource.isUsernameTaken(username)).once();
+    verify(MockUserDS.isUsernameTaken(username)).once();
   });
 });
 
@@ -425,11 +453,11 @@ describe('findUsers', () => {
     // arrange
     const promise = new Promise<User[]>(r => r([mockGraphQLUser]));
     const searchQuery = 'search query';
-    when(MockUserDataSource.findUsers(anything())).thenReturn(promise);
+    when(MockUserDS.findUsers(anything())).thenReturn(promise);
     // act
     const result = await resolver.findUsers(context, searchQuery);
     // assert
     expect(result).toStrictEqual([mockGraphQLUser]);
-    verify(MockUserDataSource.findUsers(searchQuery)).once();
+    verify(MockUserDS.findUsers(searchQuery)).once();
   });
 });

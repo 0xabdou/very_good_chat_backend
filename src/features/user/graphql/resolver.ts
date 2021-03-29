@@ -88,6 +88,20 @@ export class UserResolver {
     });
   }
 
+  @Mutation(() => Boolean)
+  updateActiveStatus(
+    @Ctx() context: Context,
+    @Arg('activeStatus') activeStatus: boolean
+  ): Promise<boolean> {
+    return context.toolBox.dataSources.userDS.updateActiveStatus(
+      context.userID!, activeStatus
+    );
+  }
+
+  @Mutation(() => Date)
+  updateLastSeen(@Ctx() context: Context): Promise<Date> {
+    return context.toolBox.dataSources.userDS.updateLastSeen(context.userID!);
+  }
 
   @Query(returnsBoolean)
   @UseMiddleware(isAuthenticated)
