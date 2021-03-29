@@ -29,6 +29,8 @@ export const mockPrismaUser: PrismaUser = {
   photoURLMedium: '/storage/auth_user_id_pp_medium.png',
   photoURLSmall: '/storage/auth_user_id_pp_small.png',
   authUserID: 'auth_user_id',
+  activeStatus: true,
+  lastSeen: new Date(),
 };
 
 export const mockGraphQLUser: User = {
