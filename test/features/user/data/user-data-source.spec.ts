@@ -196,6 +196,22 @@ describe('findUsers', () => {
   });
 });
 
+describe('updateActiveStatus', () => {
+  it('should update the active status', async () => {
+    // arrange
+    const userID = 'userIIIIIIDDDDDD';
+    const activeStatus = false;
+    // act
+    const result = await userDS.updateActiveStatus(userID, activeStatus);
+    // assert
+    verify(MockUserDelegate.update(deepEqual({
+      where: {authUserID: userID},
+      data: {activeStatus}
+    }))).once();
+    expect(result).toBe(activeStatus);
+  });
+});
+
 describe('updateLastSeen', () => {
   it('should update last seen date', async () => {
     // arrange

@@ -73,6 +73,14 @@ export default class UserDataSource {
     return users.map(u => UserDataSource._getGraphQLUser(u));
   }
 
+  async updateActiveStatus(userID: string, activeStatus: boolean): Promise<boolean> {
+    await this._prisma.user.update({
+      where: {authUserID: userID},
+      data: {activeStatus}
+    });
+    return activeStatus;
+  }
+
   async updateLastSeen(userID: string): Promise<Date> {
     const lastSeen = new Date();
     await this._prisma.user.update({
