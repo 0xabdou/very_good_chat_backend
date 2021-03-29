@@ -37,7 +37,8 @@ export default class BlockDataSource {
   async getBlockedUsers(blockingID: string): Promise<Block[]> {
     const blocks = await this._prisma.block.findMany({
       where: {blockingID},
-      include: {blocked: {include: {user: true}}}
+      include: {blocked: {include: {user: true}}},
+      orderBy: {date: 'desc'},
     });
     return blocks.map(block => {
       return {

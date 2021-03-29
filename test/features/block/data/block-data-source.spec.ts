@@ -70,7 +70,8 @@ describe('getBlockedUsers', () => {
     expect(result).toStrictEqual([mockBlock]);
     verify(MockBlockDelegate.findMany(deepEqual({
       where: {blockingID},
-      include: {blocked: {include: {user: true}}}
+      include: {blocked: {include: {user: true}}},
+      orderBy: {date: 'desc'},
     }))).once();
   });
 });

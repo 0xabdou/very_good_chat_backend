@@ -55,9 +55,9 @@ describe('validateName', () => {
     expect(error).toBeTruthy();
   });
 
-  it('should return undefined if the name is find', () => {
+  it('should return undefined if the name is fine', () => {
     // arrange
-    const name = 'abababababababababababababababbabababababababababa';
+    const name = 'abababababababababab';
     // act
     const error = userValidators.validateName(name);
     // assert
