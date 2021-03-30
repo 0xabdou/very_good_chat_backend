@@ -7,7 +7,6 @@ import Context from "../../../shared/context";
 import {
   returnsBoolean,
   returnsListOfUsers,
-  returnsUser
 } from "../../../shared/graphql/return-types";
 import {FileUpload} from "graphql-upload";
 import {ResizedPhotos} from "../../../shared/utils/file-utils";
@@ -23,12 +22,12 @@ export class UserResolver {
     return me;
   }
 
-  @Mutation(returnsUser)
+  @Mutation(() => Me)
   @UseMiddleware(isAuthenticated)
   async register(
     @Ctx() context: Context,
     @Arg('input') creation: UserCreation
-  ): Promise<User> {
+  ): Promise<Me> {
     const validator = context.toolBox.validators.user;
     const usernameError = validator.validateUsername(creation.username);
     const nameError = validator.validateName(creation.name ?? '');
@@ -56,9 +55,9 @@ export class UserResolver {
     });
   }
 
-  @Mutation(returnsUser)
+  @Mutation(() => Me)
   @UseMiddleware(isAuthenticated)
-  async updateUser(@Ctx() context: Context, @Arg('input') update: UserUpdate) {
+  async updateUser(@Ctx() context: Context, @Arg('input') update: UserUpdate): Promise<Me> {
     const validator = context.toolBox.validators.user;
     const errors: any = {};
     if (update.username) {

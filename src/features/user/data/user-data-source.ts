@@ -40,7 +40,7 @@ export default class UserDataSource {
     return user != null;
   }
 
-  async createUser(args: CreateUserArgs): Promise<User> {
+  async createUser(args: CreateUserArgs): Promise<Me> {
     const user = await this._prisma.user.create({
       data: {
         username: args.username,
@@ -51,10 +51,13 @@ export default class UserDataSource {
         photoURLSmall: args.photo?.small,
       }
     });
-    return UserDataSource._getGraphQLUser(user);
+    return {
+      user: UserDataSource._getGraphQLUser(user),
+      activeStatus: user.activeStatus
+    };
   }
 
-  async updateUser(args: UpdateUserArgs): Promise<User> {
+  async updateUser(args: UpdateUserArgs): Promise<Me> {
     const user = await this._prisma.user.update({
       where: {authUserID: args.authUserID},
       data: {
@@ -65,7 +68,10 @@ export default class UserDataSource {
         photoURLSmall: args.deletePhoto ? null : args.photo?.small,
       },
     });
-    return UserDataSource._getGraphQLUser(user);
+    return {
+      user: UserDataSource._getGraphQLUser(user),
+      activeStatus: user.activeStatus
+    };
   }
 
   async findUsers(searchQuery: string): Promise<User[]> {

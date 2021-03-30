@@ -171,7 +171,7 @@ describe('createUser', () => {
         }
       }))
     ).once();
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
   });
 });
 
@@ -197,7 +197,7 @@ describe('updateUser', () => {
         photoURLSmall: null,
       },
     }))).once();
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
   });
 });
 

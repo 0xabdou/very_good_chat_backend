@@ -115,7 +115,7 @@ describe('register', () => {
 
   beforeAll(() => {
     when(MockUserDS.createUser(anything()))
-      .thenResolve(mockGraphQLUser);
+      .thenResolve(mockMe);
   });
 
   it('should throw an error if the username is invalid', async () => {
@@ -165,7 +165,7 @@ describe('register', () => {
     // assert
     verify(MockFileUtils.saveTempPhoto(anything())).never();
     verify(MockUploader.uploadAvatar(anything())).never();
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
@@ -239,7 +239,7 @@ describe('register', () => {
       name: creation.name ?? undefined,
       photo: uploaded
     }))).once();
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
   });
 });
 
@@ -266,7 +266,7 @@ describe('updateUser', () => {
     reset(MockUserValidators);
     when(MockUserDS.isUsernameTaken(anything())).thenResolve(false);
     when(MockFileUtils.saveTempPhoto(anything())).thenResolve(photoURL);
-    when(MockUserDS.updateUser(anything())).thenResolve(mockGraphQLUser);
+    when(MockUserDS.updateUser(anything())).thenResolve(mockMe);
   });
 
   it('should throw input error if the username is invalid', async () => {
@@ -292,7 +292,7 @@ describe('updateUser', () => {
     expect(error.extensions.code).toBe('USERNAME_TAKEN');
   });
 
-  it('should should throw input error if the name is invalid', async () => {
+  it('should throw input error if the name is invalid', async () => {
     // arrange
     when(MockUserValidators.validateName(anything()))
       .thenReturn(nameError);
@@ -304,7 +304,7 @@ describe('updateUser', () => {
     expect(error.extensions.name).toBe(nameError);
   });
 
-  it('should should throw input error if the name is invalid', async () => {
+  it('should throw input error if the name is invalid', async () => {
     // arrange
     when(MockUserValidators.validateName(anything()))
       .thenReturn(nameError);
@@ -327,7 +327,7 @@ describe('updateUser', () => {
     // assert
     verify(MockFileUtils.saveTempPhoto(anything())).never();
     verify(MockUploader.uploadAvatar(anything())).never();
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
@@ -399,7 +399,7 @@ describe('updateUser', () => {
     // act
     const result = await resolver.updateUser(context, up);
     // assert
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
     verify(MockUserDS.updateUser(deepEqual({
       authUserID: userID,
       username: up.username,
@@ -408,7 +408,6 @@ describe('updateUser', () => {
       photo: uploaded,
       deletePhoto: !!up.deletePhoto,
     }))).once();
-    expect(result).toStrictEqual(mockGraphQLUser);
   });
 });
 
