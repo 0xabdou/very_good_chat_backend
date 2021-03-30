@@ -14,7 +14,11 @@ import Context from "../../../../src/shared/context";
 import {UserValidators} from "../../../../src/features/user/graphql/validators";
 import FileUtils, {ResizedPhotos} from "../../../../src/shared/utils/file-utils";
 import {UserResolver} from "../../../../src/features/user/graphql/resolver";
-import {mockGraphQLUser, mockResizedPhotos} from "../../../mock-objects";
+import {
+  mockGraphQLUser,
+  mockMe,
+  mockResizedPhotos
+} from "../../../mock-objects";
 import {
   User,
   UserCreation,
@@ -62,7 +66,7 @@ beforeEach(() => {
 describe('me', () => {
   it('should throw an error if the user is not found', async () => {
     // arrange
-    when(MockUserDS.getUser(anything())).thenResolve(null);
+    when(MockUserDS.getMe(anything())).thenResolve(null);
     // act
     const result = await (async () => {
       try {
@@ -73,15 +77,17 @@ describe('me', () => {
     })();
     // assert
     expect(result.extensions.code).toBe('USER_NOT_FOUND');
+    verify(MockUserDS.getMe(userID)).once();
   });
 
-  it('should return the user if it exists', async () => {
+  it('should return the me object if it exists', async () => {
     // arrange
-    when(MockUserDS.getUser(anything())).thenResolve(mockGraphQLUser);
+    when(MockUserDS.getMe(anything())).thenResolve(mockMe);
     // act
     const result = await resolver.me(context);
     // assert
-    expect(result).toStrictEqual(mockGraphQLUser);
+    expect(result).toStrictEqual(mockMe);
+    verify(MockUserDS.getMe(userID)).once();
   });
 });
 

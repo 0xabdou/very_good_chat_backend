@@ -12,6 +12,7 @@ import UserDataSource, {UpdateUserArgs} from "../../../../src/features/user/data
 import {
   mockCreateUserArgs,
   mockGraphQLUser,
+  mockMe,
   mockPrismaUser,
   mockTheDate
 } from "../../../mock-objects";
@@ -33,6 +34,30 @@ beforeEach(() => {
 
 afterAll(() => {
   spy.mockRestore();
+});
+
+describe('getMe', () => {
+  const userID = 'userIIDD';
+
+  it('should return null if no user exists with that id', async () => {
+    // arrange
+    when(MockUserDelegate.findUnique(anything())).thenResolve(null);
+    // act
+    const result = await userDS.getMe(userID);
+    // assert
+    expect(result).toBeNull();
+    verify(MockUserDelegate.findUnique(deepEqual({where: {authUserID: userID}}))).once();
+  });
+
+  it('should return a Me object if a user exists with that id', async () => {
+    // arrange
+    when(MockUserDelegate.findUnique(anything())).thenResolve(mockPrismaUser);
+    // act
+    const result = await userDS.getMe(userID);
+    // assert
+    expect(result).toStrictEqual(mockMe);
+    verify(MockUserDelegate.findUnique(deepEqual({where: {authUserID: userID}}))).once();
+  });
 });
 
 describe('getUser', () => {

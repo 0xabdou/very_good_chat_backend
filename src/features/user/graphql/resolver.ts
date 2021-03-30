@@ -1,5 +1,5 @@
 import {Arg, Ctx, Mutation, Query, Resolver, UseMiddleware} from "type-graphql";
-import {User, UserCreation, UserUpdate} from "./types";
+import {Me, User, UserCreation, UserUpdate} from "./types";
 import {ApolloError, UserInputError} from "apollo-server-express";
 
 import isAuthenticated from "../../auth/graphql/is-authenticated";
@@ -14,13 +14,13 @@ import {ResizedPhotos} from "../../../shared/utils/file-utils";
 
 @Resolver()
 export class UserResolver {
-  @Query(returnsUser)
+
+  @Query(() => Me)
   @UseMiddleware(isAuthenticated)
-  async me(@Ctx() context: Context): Promise<User> {
-    const user = await context.toolBox
-      .dataSources.userDS.getUser({id: context.userID!});
-    if (!user) throw new ApolloError("This user has to register", "USER_NOT_FOUND");
-    return user;
+  async me(@Ctx() context: Context): Promise<Me> {
+    const me = await context.toolBox.dataSources.userDS.getMe(context.userID!);
+    if (!me) throw new ApolloError("This user has to register", "USER_NOT_FOUND");
+    return me;
   }
 
   @Mutation(returnsUser)

@@ -17,6 +17,15 @@ export class User {
   photoURLSmall?: string;
 }
 
+@ObjectType()
+export class Me {
+  @Field()
+  user!: User;
+  // The fields below are private
+  @Field()
+  activeStatus!: boolean;
+}
+
 @InputType()
 export class UserCreation {
   @Field()

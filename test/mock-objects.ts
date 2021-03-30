@@ -8,7 +8,7 @@ import {
 } from '@prisma/client';
 import {AuthProviderUser} from "../src/features/auth/data/google-api";
 import UserDataSource, {CreateUserArgs} from "../src/features/user/data/user-data-source";
-import {User} from '../src/features/user/graphql/types';
+import {Me, User} from '../src/features/user/graphql/types';
 import {
   Friendship,
   FriendshipStatus
@@ -40,6 +40,11 @@ export const mockGraphQLUser: User = {
   photoURLSource: '/storage/auth_user_id_pp_source.png',
   photoURLMedium: '/storage/auth_user_id_pp_medium.png',
   photoURLSmall: '/storage/auth_user_id_pp_small.png',
+};
+
+export const mockMe: Me = {
+  user: mockGraphQLUser,
+  activeStatus: mockPrismaUser.activeStatus
 };
 
 export const mockResizedPhotos: ResizedPhotos = {

@@ -1,5 +1,5 @@
 import {PrismaClient, User as PrismaUser} from "@prisma/client";
-import {GerUserArgs, User} from "../graphql/types";
+import {GerUserArgs, Me, User} from "../graphql/types";
 import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
 import {ResizedPhotos} from "../../../shared/utils/file-utils";
@@ -10,6 +10,17 @@ export default class UserDataSource {
 
   constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
     this._prisma = prisma;
+  }
+
+  async getMe(userID: string): Promise<Me | null> {
+    const user = await this._prisma.user.findUnique({
+      where: {authUserID: userID}
+    });
+    if (!user) return null;
+    return {
+      user: UserDataSource._getGraphQLUser(user),
+      activeStatus: user.activeStatus
+    };
   }
 
   async getUser({id, username}: GerUserArgs): Promise<User | null> {
