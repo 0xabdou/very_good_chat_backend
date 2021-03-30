@@ -88,6 +88,7 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
+  @UseMiddleware(isAuthenticated)
   updateActiveStatus(
     @Ctx() context: Context,
     @Arg('activeStatus') activeStatus: boolean
@@ -98,6 +99,7 @@ export class UserResolver {
   }
 
   @Mutation(() => Date)
+  @UseMiddleware(isAuthenticated)
   updateLastSeen(@Ctx() context: Context): Promise<Date> {
     return context.toolBox.dataSources.userDS.updateLastSeen(context.userID!);
   }
