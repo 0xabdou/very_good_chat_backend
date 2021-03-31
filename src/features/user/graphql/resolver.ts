@@ -115,11 +115,12 @@ export class UserResolver {
 
   @Query(returnsListOfUsers)
   @UseMiddleware(isAuthenticated)
-  findUsers(
+  async findUsers(
     @Ctx() context: Context,
     @Arg('searchQuery') searchQuery: string
   ): Promise<User[]> {
-    return context.toolBox.dataSources.userDS.findUsers(searchQuery);
+    const blockingIDs = await context.toolBox.dataSources.blockDS.getBlockingUserIDs(context.userID!);
+    return context.toolBox.dataSources.userDS.findUsers(searchQuery, blockingIDs);
   }
 
   async _savePhoto(context: Context, photo: Promise<FileUpload>):

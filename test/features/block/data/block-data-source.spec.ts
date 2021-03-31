@@ -126,3 +126,19 @@ describe('getBlockStatus', () => {
     expect(result).toBeUndefined();
   });
 });
+
+describe('getBlockingIDs', () => {
+  it('should return ids of the users blocking the user with userID', async () => {
+    // arrange
+    when(MockBlockDelegate.findMany(anything())).thenResolve([mockPrismaBlock]);
+    const userID = 'userIIIID';
+    // act
+    const result = await blockDS.getBlockingUserIDs(userID);
+    // assert
+    expect(result).toStrictEqual([mockPrismaBlock.blockingID]);
+    verify(MockBlockDelegate.findMany(deepEqual({
+      where: {blockedID: userID},
+      orderBy: {date: 'desc'},
+    }))).once();
+  });
+});

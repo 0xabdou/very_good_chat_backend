@@ -202,21 +202,27 @@ describe('updateUser', () => {
 });
 
 describe('findUsers', () => {
-  it('should find users with the search query', async () => {
+  it('should find users with the search query, excluding the array of ids', async () => {
     // arrange
     when(MockUserDelegate.findMany(anything())).thenResolve([mockPrismaUser]);
     const searchQuery = 'searchQuery';
+    const exclude = ['blabla', 'haha'];
     // act
-    const result = await userDS.findUsers(searchQuery);
+    const result = await userDS.findUsers(searchQuery, exclude);
     // assert
     expect(result).toEqual([UserDataSource._getGraphQLUser(mockPrismaUser)]);
     verify(MockUserDelegate.findMany(deepEqual({
       where: {
-        OR: [
-          {username: {contains: searchQuery}},
-          {name: {contains: searchQuery}}
+        AND: [
+          {authUserID: {notIn: exclude}},
+          {
+            OR: [
+              {username: {contains: searchQuery, mode: 'insensitive'}},
+              {name: {contains: searchQuery, mode: 'insensitive'}}
+            ],
+          }
         ]
-      }
+      },
     }))).once();
   });
 });

@@ -74,18 +74,23 @@ export default class UserDataSource {
     };
   }
 
-  async findUsers(searchQuery: string): Promise<User[]> {
+  async findUsers(searchQuery: string, excludeIDs: string[] = []): Promise<User[]> {
     const users = await this._prisma.user.findMany({
       where: {
-        OR: [
+        AND: [
+          {authUserID: {notIn: excludeIDs}},
           {
-            username: {contains: searchQuery}
-          },
-          {
-            name: {contains: searchQuery}
+            OR: [
+              {
+                username: {contains: searchQuery, mode: 'insensitive'},
+              },
+              {
+                name: {contains: searchQuery, mode: 'insensitive'}
+              }
+            ],
           }
         ]
-      }
+      },
     });
     return users.map(u => UserDataSource._getGraphQLUser(u));
   }

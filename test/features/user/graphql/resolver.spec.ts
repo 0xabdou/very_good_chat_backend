@@ -20,14 +20,16 @@ import {
   mockResizedPhotos
 } from "../../../mock-objects";
 import {
-  User,
   UserCreation,
   UserUpdate
 } from "../../../../src/features/user/graphql/types";
 import {FileUpload} from "graphql-upload";
 import {IUploader} from "../../../../src/shared/apis/uploader";
+import BlockDataSource
+  from "../../../../src/features/block/data/block-data-source";
 
 const MockUserDS = mock<UserDataSource>();
+const MockBlockDS = mock<BlockDataSource>();
 const MockUserValidators = mock<UserValidators>();
 const MockUploader = mock<IUploader>();
 const MockFileUtils = mock<FileUtils>();
@@ -43,6 +45,7 @@ const context = {
   toolBox: {
     dataSources: {
       userDS: instance(MockUserDS),
+      blockDS: instance(MockBlockDS),
       uploader: instance(MockUploader),
     },
     validators: {
@@ -454,15 +457,17 @@ describe('checkUsernameExistence', () => {
 });
 
 describe('findUsers', () => {
-  it('should return the found users', async () => {
+  it('should return the found users excluding the blocking ones', async () => {
     // arrange
-    const promise = new Promise<User[]>(r => r([mockGraphQLUser]));
+    const blockingIDs = ['blabla', 'haha'];
+    when(MockBlockDS.getBlockingUserIDs(anything())).thenResolve(blockingIDs);
+    const foundUsers = [mockGraphQLUser];
+    when(MockUserDS.findUsers(anything(), anything())).thenResolve(foundUsers);
     const searchQuery = 'search query';
-    when(MockUserDS.findUsers(anything())).thenReturn(promise);
     // act
     const result = await resolver.findUsers(context, searchQuery);
     // assert
-    expect(result).toStrictEqual([mockGraphQLUser]);
-    verify(MockUserDS.findUsers(searchQuery)).once();
+    expect(result).toStrictEqual(foundUsers);
+    verify(MockUserDS.findUsers(searchQuery, blockingIDs)).once();
   });
 });

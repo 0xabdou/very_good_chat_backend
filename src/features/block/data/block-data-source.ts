@@ -48,6 +48,14 @@ export default class BlockDataSource {
     });
   }
 
+  async getBlockingUserIDs(blockedID: string): Promise<string[]> {
+    const blocks = await this._prisma.block.findMany({
+      where: {blockedID},
+      orderBy: {date: 'desc'},
+    });
+    return blocks.map(block => block.blockingID);
+  }
+
   async getBlockStatus(user1ID: string, user2ID: string)
     : Promise<'blocking' | 'blocked' | undefined> {
     const blocks = await this._prisma.block.findMany({
