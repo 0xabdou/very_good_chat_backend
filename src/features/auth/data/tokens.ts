@@ -14,7 +14,7 @@ export class Tokens {
     return this._signer.sign(
       {userID},
       process.env.ACCESS_TOKEN_SECRET!,
-      {expiresIn: '1h'}
+      {expiresIn: '30m'}
     );
   }
 
