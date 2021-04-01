@@ -33,7 +33,7 @@ it('should generate and verify access tokens', () => {
   verify(MockSigner.sign(
     deepEqual({userID}),
     process.env.ACCESS_TOKEN_SECRET!,
-    deepEqual({expiresIn: '1h'}),
+    deepEqual({expiresIn: '30m'}),
   )).once();
   expect(codedToken).toBe(token);
   // act again
