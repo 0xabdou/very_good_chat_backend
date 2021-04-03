@@ -20,6 +20,7 @@ model AuthUser {
     blockeds            Block[] @relation(name: "blocked")
     notifications       Notification[] @relation(name: "notification_owner")
     notificationFriend  Notification[] @relation(name: "notification_friend")
+    conversations       Conversation[]
     @@map("auth_users")
 }
 
@@ -94,4 +95,44 @@ model Badge {
 enum BadgeName {
     NOTIFICATIONS
     FRIEND_REQUESTS
+}
+
+// Chat
+
+model Conversation {
+    id              Int @id @default(autoincrement())
+    participants    AuthUser[]
+    messages        Message[]
+    type            ConversationType
+    updatedAt       DateTime @updatedAt
+    createdAt       DateTime
+}
+
+enum ConversationType {
+    ONE_TO_ONE
+    GROUP
+}
+
+model Message {
+    id              Int @id @default(autoincrement())
+    sender          AuthUser @relation(fields: [senderID], references: [id])
+    senderID        String
+    conversation    Conversation @relation(fields: [conversationID], references: [id])
+    conversationID  Int
+    text            String?
+    medias          Media[]
+    sentAt          DateTime
+}
+
+model Media {
+    id          Int @id @default(autoincrement())
+    message     Message @relation(fields: [messageID], references: [id])
+    messageID   Int
+    type        MediaType
+    url         String
+}
+
+enum MediaType {
+    IMAGE
+    VIDEO
 }

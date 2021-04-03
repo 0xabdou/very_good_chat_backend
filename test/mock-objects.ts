@@ -1,9 +1,13 @@
 import {
-  AuthUser,
   AuthUser as PrismaAuthUser,
   Badge as PrismaBadge,
   Block as PrismaBlock,
+  Conversation as PrismaConversation,
+  ConversationType as PrismaConversationType,
   Friend as PrismaFriend,
+  Media as PrismaMedia,
+  MediaType as PrismaMediaType,
+  Message as PrismaMessage,
   User as PrismaUser,
 } from '@prisma/client';
 import {AuthProviderUser} from "../src/features/auth/data/google-api";
@@ -16,11 +20,20 @@ import {
 import {ResizedPhotos} from "../src/shared/utils/file-utils";
 import {BadgeName} from "../src/features/badge/graphql/types";
 import {Block} from "../src/features/block/graphql/types";
+import {FullPrismaConversation} from "../src/features/chat/data/chat-data-source";
+import {
+  Conversation,
+  ConversationType,
+  Media,
+  MediaType,
+  Message
+} from "../src/features/chat/graphql/types";
 
-export const mockPrismaAuthUser: AuthUser = {
+export const mockPrismaAuthUser: PrismaAuthUser = {
   id: 'auth_user_id',
   email: 'auth@email.com',
 };
+
 
 export const mockPrismaUser: PrismaUser = {
   username: 'username',
@@ -109,6 +122,65 @@ export const mockPrismaBlock: PrismaBlockWithUser = {
 export const mockBlock: Block = {
   user: UserDataSource._getGraphQLUser(mockPrismaBlock.blocked.user),
   date: mockPrismaBlock.date
+};
+
+export const mockPrismaConversation: PrismaConversation = {
+  id: 911,
+  type: PrismaConversationType.ONE_TO_ONE,
+  updatedAt: new Date(),
+  createdAt: new Date(),
+};
+
+const messageId = 123;
+
+export const mockPrismaMedia: PrismaMedia = {
+  id: 191,
+  messageID: messageId,
+  type: PrismaMediaType.IMAGE,
+  url: 'https://picsum.org/420x69',
+};
+
+export const mockPrismaMessage: PrismaMessage & { medias: PrismaMedia[] } = {
+  id: messageId,
+  conversationID: mockPrismaConversation.id,
+  senderID: mockPrismaAuthUser.id,
+  text: 'hello world',
+  sentAt: new Date(),
+  medias: [mockPrismaMedia],
+};
+
+
+export const mockPrismaFullConversation: FullPrismaConversation = {
+  ...mockPrismaConversation,
+  participants: [
+    {
+      ...mockPrismaAuthUser,
+      user: mockPrismaUser
+    }
+  ],
+  messages: [
+    {...mockPrismaMessage, medias: [mockPrismaMedia]}
+  ]
+};
+
+export const mockMedia: Media = {
+  type: MediaType[mockPrismaMedia.type],
+  url: mockPrismaMedia.url
+};
+
+export const mockMessage: Message = {
+  id: mockPrismaMessage.id,
+  senderID: mockPrismaMessage.senderID,
+  text: mockPrismaMessage.text ?? undefined,
+  medias: [mockMedia],
+  sentAt: mockPrismaMessage.sentAt
+};
+
+export const mockConversation: Conversation = {
+  id: mockPrismaFullConversation.id,
+  type: ConversationType[mockPrismaFullConversation.type],
+  participants: [mockGraphQLUser],
+  messages: [mockMessage]
 };
 
 export const mockTheDate = (): [jest.SpyInstance, Date] => {
