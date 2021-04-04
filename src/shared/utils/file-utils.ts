@@ -4,6 +4,7 @@ import {dirname, join} from 'path';
 import {injectable} from "inversify";
 import sharp from 'sharp';
 import {v4} from 'uuid';
+import {MediaType} from "../../features/chat/graphql/types";
 
 @injectable()
 export default class FileUtils {
@@ -12,6 +13,15 @@ export default class FileUtils {
   constructor(storageDir: string) {
     console.log('StorageDir: ', storageDir);
     this._storageDir = storageDir;
+  }
+
+
+  getMediaType(url: string): MediaType {
+    const imageExt = ['png', 'jpg', 'jpeg'];
+    const ext = url.split('.')[-1];
+    if (imageExt.indexOf(ext) != -1) return MediaType.IMAGE;
+    if (ext == 'mp4') return MediaType.VIDEO;
+    throw new Error('UNSUPPORTED_MEDIA_TYPE',);
   }
 
   async saveTempFile(file: Promise<FileUpload>): Promise<string> {

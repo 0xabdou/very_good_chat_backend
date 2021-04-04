@@ -62,7 +62,7 @@ export default class ChatDataSource {
 
   async getConversations(userID: string): Promise<Conversation[]> {
     const conversations = await this._prisma.conversation.findMany({
-      where: {participants: {every: {id: userID}}},
+      where: {participants: {some: {id: userID}}},
       include: {
         participants: {include: {user: true}},
         messages: {

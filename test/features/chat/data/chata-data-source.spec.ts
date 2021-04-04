@@ -132,7 +132,7 @@ describe('getConversations', () => {
     // assert
     expect(result).toStrictEqual([ChatDataSource._getConversation(mockPrismaFullConversation)]);
     verify(MockConversationDelegate.findMany(deepEqual({
-      where: {participants: {every: {id: user1ID}}},
+      where: {participants: {some: {id: user1ID}}},
       include: {
         participants: {include: {user: true}},
         messages: {

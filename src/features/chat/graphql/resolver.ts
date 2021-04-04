@@ -59,13 +59,18 @@ export default class ChatResolver {
       const tempURLs = await Promise.all(message.medias!.map(
         media => context.toolBox.utils.file.saveTempFile(media)
       ));
-      const types = tempURLs.map(url => ChatResolver._getMediaType(url));
-      const uploadedURLs = await Promise.all(tempURLs.map(
-        url => context.toolBox.dataSources.uploader.uploadConversationMedia({
-          mediaPath: url,
-          conversationID: message.conversationID
-        })
-      ));
+      const types: MediaType[] = [];
+      const urlsToUpload: Promise<string>[] = [];
+      for (let url of tempURLs) {
+        types.push(context.toolBox.utils.file.getMediaType(url));
+        urlsToUpload.push(
+          context.toolBox.dataSources.uploader.uploadConversationMedia({
+            mediaPath: url,
+            conversationID: message.conversationID
+          })
+        );
+      }
+      const uploadedURLs = await Promise.all(urlsToUpload);
       medias = [];
       for (let i in uploadedURLs) {
         medias.push({
@@ -81,13 +86,5 @@ export default class ChatResolver {
       text: message.text,
       medias
     });
-  }
-
-  static _getMediaType(url: string): MediaType {
-    const imageExt = ['png', 'jpg', 'jpeg'];
-    const ext = url.split('.')[-1];
-    if (imageExt.indexOf(ext) != -1) return MediaType.IMAGE;
-    if (ext == 'mp4') return MediaType.VIDEO;
-    throw new UserInputError('UNSUPPORTED_MEDIA_TYPE',);
   }
 }
