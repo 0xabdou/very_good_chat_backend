@@ -14,12 +14,11 @@ export default class FileUtils {
     this._storageDir = storageDir;
   }
 
-  async saveTempPhoto(photo: Promise<FileUpload>): Promise<string> {
-    const {createReadStream, mimetype} = await photo;
+  async saveTempFile(file: Promise<FileUpload>): Promise<string> {
+    const {createReadStream, mimetype} = await file;
     const ext = mimetype.split('/')[1];
     const name = v4();
-    const photoPath = `${name}.${ext}`;
-    const filePath = `${this._storageDir}/${photoPath}`;
+    const filePath = `${this._storageDir}/${name}.${ext}`;
     const writeableStream = createWriteStream(filePath, {autoClose: true});
     const saved = await new Promise<boolean>(resolve => {
       createReadStream()
@@ -27,7 +26,7 @@ export default class FileUtils {
         .on('finish', () => resolve(true))
         .on('error', () => resolve(false));
     });
-    if (!saved) throw new Error("Could not save photo");
+    if (!saved) throw new Error("Could not save file");
     return filePath;
   }
 
@@ -48,6 +47,10 @@ export default class FileUtils {
       small: paths[0],
       medium: paths[1]
     } as ResizedPhotos;
+  }
+
+  getConversationMediaTypesOrThrow() {
+
   }
 
   async deleteTempFile(path: string) {

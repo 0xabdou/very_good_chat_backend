@@ -78,7 +78,10 @@ describe('createOneToOneConversation', function () {
       },
       include: {
         participants: {include: {user: true}},
-        messages: {orderBy: {sentAt: 'desc'}, include: {medias: true}}
+        messages: {
+          orderBy: {sentAt: 'desc'},
+          include: {medias: true, seenBy: true, deliveredTo: true}
+        }
       }
     }))).once();
   };
@@ -111,7 +114,10 @@ describe('createOneToOneConversation', function () {
       },
       include: {
         participants: {include: {user: true}},
-        messages: {orderBy: {sentAt: 'desc'}, include: {medias: true}}
+        messages: {
+          orderBy: {sentAt: 'desc'},
+          include: {medias: true, seenBy: true, deliveredTo: true}
+        }
       }
     }))).once();
   });
@@ -129,7 +135,10 @@ describe('getConversations', () => {
       where: {participants: {every: {id: user1ID}}},
       include: {
         participants: {include: {user: true}},
-        messages: {orderBy: {sentAt: 'desc'}, include: {medias: true}}
+        messages: {
+          orderBy: {sentAt: 'desc'},
+          include: {medias: true, seenBy: true, deliveredTo: true}
+        }
       },
       orderBy: {updatedAt: 'desc'}
     }))).once();
@@ -160,7 +169,11 @@ describe('sendMessage', () => {
           create: args.medias,
         } : undefined
       },
-      include: {medias: true}
+      include: {
+        medias: true,
+        seenBy: true,
+        deliveredTo: true,
+      },
     }))).once();
   });
 });

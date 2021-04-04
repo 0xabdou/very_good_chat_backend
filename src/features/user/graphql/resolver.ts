@@ -129,7 +129,7 @@ export class UserResolver {
       const fileUtils = context.toolBox.utils.file;
       const uploader = context.toolBox.dataSources.uploader;
       const userID = context.userID!;
-      const tempFilePath = await fileUtils.saveTempPhoto(photo);
+      const tempFilePath = await fileUtils.saveTempFile(photo);
       const paths = await fileUtils.generateResizedPhotos(tempFilePath);
       const promises = [
         uploader.uploadAvatar({userID, photoPath: paths.source}),

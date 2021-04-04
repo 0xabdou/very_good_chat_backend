@@ -17,6 +17,7 @@ import BadgeDataSource from "../features/badge/data/badge-data-source";
 import NotificationDataSource
   from "../features/notification/data/notification-data-source";
 import BlockDataSource from "../features/block/data/block-data-source";
+import ChatDataSource from "../features/chat/data/chat-data-source";
 
 const container = new Container();
 
@@ -44,6 +45,8 @@ export const initContainer = async () => {
   container.bind<BlockDataSource>(TYPES.BlockDataSource).to(BlockDataSource);
   // Notification data source
   container.bind<NotificationDataSource>(TYPES.NotificationDataSource).to(NotificationDataSource);
+  // Chat data source
+  container.bind<ChatDataSource>(TYPES.ChatDataSource).to(ChatDataSource);
   // Shared APIS
   container.bind<IUploader>(TYPES.IUploader).to(Uploader);
 
@@ -58,6 +61,7 @@ export const initContainer = async () => {
     badgeDS: container.get(TYPES.BadgeDataSource),
     blockDS: container.get(TYPES.BlockDataSource),
     notificationDS: container.get(TYPES.NotificationDataSource),
+    chatDS: container.get(TYPES.ChatDataSource)
   });
 
   // Context validators

@@ -11,6 +11,7 @@ import BadgeDataSource from "../features/badge/data/badge-data-source";
 import NotificationDataSource
   from "../features/notification/data/notification-data-source";
 import BlockDataSource from "../features/block/data/block-data-source";
+import ChatDataSource from "../features/chat/data/chat-data-source";
 
 type Context = {
   req: Request,
@@ -34,6 +35,7 @@ export type DataSources = {
   blockDS: BlockDataSource,
   badgeDS: BadgeDataSource,
   notificationDS: NotificationDataSource,
+  chatDS: ChatDataSource
 }
 
 export type Validators = {

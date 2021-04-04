@@ -166,14 +166,14 @@ describe('register', () => {
     // act
     const result = await resolver.register(context, noPhotoCreation);
     // assert
-    verify(MockFileUtils.saveTempPhoto(anything())).never();
+    verify(MockFileUtils.saveTempFile(anything())).never();
     verify(MockUploader.uploadAvatar(anything())).never();
     expect(result).toStrictEqual(mockMe);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveTempPhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -194,7 +194,7 @@ describe('register', () => {
   it('should save -> upload -> delete temp photo if it is sent, ', async () => {
     // arrange
     const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempPhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenResolve(path);
     when(MockFileUtils.generateResizedPhotos(anything()))
       .thenResolve(mockResizedPhotos);
@@ -203,7 +203,7 @@ describe('register', () => {
     // act
     await act();
     // assert
-    verify(MockFileUtils.saveTempPhoto(creation.photo!)).once();
+    verify(MockFileUtils.saveTempFile(creation.photo!)).once();
     verify(MockFileUtils.generateResizedPhotos(path)).once();
     for (let photoPath of Object.values(mockResizedPhotos)) {
       verify(MockUploader.uploadAvatar(deepEqual({photoPath, userID})))
@@ -215,7 +215,7 @@ describe('register', () => {
   it('should create the user and return it if al goes well', async () => {
     // arrange
     const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempPhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenResolve(path);
     when(MockFileUtils.generateResizedPhotos(anything()))
       .thenResolve(mockResizedPhotos);
@@ -268,7 +268,7 @@ describe('updateUser', () => {
   beforeEach(() => {
     reset(MockUserValidators);
     when(MockUserDS.isUsernameTaken(anything())).thenResolve(false);
-    when(MockFileUtils.saveTempPhoto(anything())).thenResolve(photoURL);
+    when(MockFileUtils.saveTempFile(anything())).thenResolve(photoURL);
     when(MockUserDS.updateUser(anything())).thenResolve(mockMe);
   });
 
@@ -328,14 +328,14 @@ describe('updateUser', () => {
     // act
     const result = await resolver.updateUser(context, noPhotoUpdate);
     // assert
-    verify(MockFileUtils.saveTempPhoto(anything())).never();
+    verify(MockFileUtils.saveTempFile(anything())).never();
     verify(MockUploader.uploadAvatar(anything())).never();
     expect(result).toStrictEqual(mockMe);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveTempPhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -356,7 +356,7 @@ describe('updateUser', () => {
   it('should save -> upload -> delete temp photo if it is sent, ', async () => {
     // arrange
     const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempPhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenResolve(path);
     when(MockFileUtils.generateResizedPhotos(anything()))
       .thenResolve(mockResizedPhotos);
@@ -365,7 +365,7 @@ describe('updateUser', () => {
     // act
     await act();
     // assert
-    verify(MockFileUtils.saveTempPhoto(update.photo!)).once();
+    verify(MockFileUtils.saveTempFile(update.photo!)).once();
     verify(MockFileUtils.generateResizedPhotos(path)).once();
     for (let photoPath of Object.values(mockResizedPhotos)) {
       verify(MockUploader.uploadAvatar(deepEqual({photoPath, userID})))
@@ -381,7 +381,7 @@ describe('updateUser', () => {
       deleteName: true,
     };
     const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempPhoto(anything()))
+    when(MockFileUtils.saveTempFile(anything()))
       .thenResolve(path);
     when(MockFileUtils.generateResizedPhotos(anything()))
       .thenResolve(mockResizedPhotos);

@@ -7,7 +7,6 @@ import {
   Friend as PrismaFriend,
   Media as PrismaMedia,
   MediaType as PrismaMediaType,
-  Message as PrismaMessage,
   User as PrismaUser,
 } from '@prisma/client';
 import {AuthProviderUser} from "../src/features/auth/data/google-api";
@@ -20,7 +19,10 @@ import {
 import {ResizedPhotos} from "../src/shared/utils/file-utils";
 import {BadgeName} from "../src/features/badge/graphql/types";
 import {Block} from "../src/features/block/graphql/types";
-import {FullPrismaConversation} from "../src/features/chat/data/chat-data-source";
+import {
+  FullPrismaConversation,
+  FullPrismaMessage
+} from "../src/features/chat/data/chat-data-source";
 import {
   Conversation,
   ConversationType,
@@ -124,14 +126,14 @@ export const mockBlock: Block = {
   date: mockPrismaBlock.date
 };
 
+const conversationID = 321;
+const messageId = 123;
 export const mockPrismaConversation: PrismaConversation = {
-  id: 911,
+  id: conversationID,
   type: PrismaConversationType.ONE_TO_ONE,
   updatedAt: new Date(),
   createdAt: new Date(),
 };
-
-const messageId = 123;
 
 export const mockPrismaMedia: PrismaMedia = {
   id: 191,
@@ -140,13 +142,15 @@ export const mockPrismaMedia: PrismaMedia = {
   url: 'https://picsum.org/420x69',
 };
 
-export const mockPrismaMessage: PrismaMessage & { medias: PrismaMedia[] } = {
+export const mockPrismaMessage: FullPrismaMessage = {
   id: messageId,
   conversationID: mockPrismaConversation.id,
   senderID: mockPrismaAuthUser.id,
   text: 'hello world',
   sentAt: new Date(),
   medias: [mockPrismaMedia],
+  deliveredTo: [mockPrismaAuthUser],
+  seenBy: [mockPrismaAuthUser],
 };
 
 
@@ -170,10 +174,13 @@ export const mockMedia: Media = {
 
 export const mockMessage: Message = {
   id: mockPrismaMessage.id,
+  conversationID: mockPrismaMessage.conversationID,
   senderID: mockPrismaMessage.senderID,
   text: mockPrismaMessage.text ?? undefined,
   medias: [mockMedia],
-  sentAt: mockPrismaMessage.sentAt
+  sentAt: mockPrismaMessage.sentAt,
+  deliveredTo: mockPrismaMessage.deliveredTo.map(u => u.id),
+  seenBy: mockPrismaMessage.seenBy.map(u => u.id),
 };
 
 export const mockConversation: Conversation = {

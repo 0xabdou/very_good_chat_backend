@@ -14,10 +14,11 @@ import {
   PrismaClient,
   User as PrismaUser
 } from "@prisma/client";
-import {inject} from "inversify";
+import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
 import UserDataSource from "../../user/data/user-data-source";
 
+@injectable()
 export default class ChatDataSource {
   private _prisma: PrismaClient;
 
@@ -33,7 +34,10 @@ export default class ChatDataSource {
       },
       include: {
         participants: {include: {user: true}},
-        messages: {orderBy: {sentAt: 'desc'}, include: {medias: true}}
+        messages: {
+          orderBy: {sentAt: 'desc'},
+          include: {medias: true, seenBy: true, deliveredTo: true}
+        }
       }
     });
     if (existingConversations[0]) {
@@ -47,7 +51,10 @@ export default class ChatDataSource {
       },
       include: {
         participants: {include: {user: true}},
-        messages: {orderBy: {sentAt: 'desc'}, include: {medias: true}}
+        messages: {
+          orderBy: {sentAt: 'desc'},
+          include: {medias: true, seenBy: true, deliveredTo: true}
+        }
       }
     });
     return ChatDataSource._getConversation(conversation);
@@ -58,7 +65,14 @@ export default class ChatDataSource {
       where: {participants: {every: {id: userID}}},
       include: {
         participants: {include: {user: true}},
-        messages: {orderBy: {sentAt: 'desc'}, include: {medias: true}}
+        messages: {
+          orderBy: {sentAt: 'desc'},
+          include: {
+            medias: true,
+            seenBy: true,
+            deliveredTo: true,
+          }
+        }
       },
       orderBy: {updatedAt: 'desc'}
     });
@@ -76,7 +90,11 @@ export default class ChatDataSource {
           create: args.medias,
         } : undefined
       },
-      include: {medias: true}
+      include: {
+        medias: true,
+        seenBy: true,
+        deliveredTo: true,
+      }
     });
     return ChatDataSource._getMessage(message);
   }
@@ -100,10 +118,13 @@ export default class ChatDataSource {
   static _getMessage(message: FullPrismaMessage): Message {
     return {
       id: message.id,
+      conversationID: message.conversationID,
       senderID: message.senderID,
       text: message.text ?? undefined,
       medias: message.medias.map(ChatDataSource._getMedia),
-      sentAt: message.sentAt
+      sentAt: message.sentAt,
+      deliveredTo: message.deliveredTo.map(au => au.id),
+      seenBy: message.seenBy.map(au => au.id),
     };
   }
 
@@ -130,5 +151,7 @@ export type FullPrismaConversation = PrismaConversation & {
 }
 
 export type FullPrismaMessage = PrismaMessage & {
+  seenBy: PrismaAuthUser[],
+  deliveredTo: PrismaAuthUser[],
   medias: PrismaMedia[]
 }

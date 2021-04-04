@@ -16,6 +16,7 @@ import FriendResolver from "./features/friend/graphql/resolver";
 import BadgeResolver from "./features/badge/graphql/resolver";
 import NotificationResolver from "./features/notification/graphql/resolver";
 import BlockResolver from "./features/block/graphql/resolver";
+import ChatResolver from "./features/chat/graphql/resolver";
 
 const createApp = async (toolBox: ToolBox) => {
   const app = express();
@@ -35,7 +36,8 @@ const createApp = async (toolBox: ToolBox) => {
       FriendResolver,
       BadgeResolver,
       BlockResolver,
-      NotificationResolver
+      NotificationResolver,
+      ChatResolver,
     ],
     globalMiddlewares: [errorInterceptor],
     dateScalarMode: 'timestamp'

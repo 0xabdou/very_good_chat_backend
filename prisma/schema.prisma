@@ -21,6 +21,8 @@ model AuthUser {
     notifications       Notification[] @relation(name: "notification_owner")
     notificationFriend  Notification[] @relation(name: "notification_friend")
     conversations       Conversation[]
+    deliveredMessages   Message[] @relation(name: "delivered")
+    seenMessages        Message[] @relation(name: "seen")
     @@map("auth_users")
 }
 
@@ -122,6 +124,8 @@ model Message {
     text            String?
     medias          Media[]
     sentAt          DateTime
+    deliveredTo     AuthUser[] @relation(name: "delivered")
+    seenBy          AuthUser[] @relation(name: "seen")
 }
 
 model Media {
