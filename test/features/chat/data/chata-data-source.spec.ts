@@ -12,18 +12,28 @@ import {
   verify,
   when
 } from "ts-mockito";
-import ChatDataSource, {SendMessageArgs} from "../../../../src/features/chat/data/chat-data-source";
+import ChatDataSource, {
+  FullPrismaConversation,
+  SendMessageArgs
+} from "../../../../src/features/chat/data/chat-data-source";
 import {
   mockConversation,
   mockMedia,
   mockMessage,
+  mockPrismaAuthUser,
   mockPrismaConversation,
   mockPrismaFullConversation,
   mockPrismaMedia,
   mockPrismaMessage,
+  mockPrismaUser,
   mockTheDate
 } from "../../../mock-objects";
-import {ConversationType} from "../../../../src/features/chat/graphql/types";
+import {
+  Conversation,
+  ConversationType
+} from "../../../../src/features/chat/graphql/types";
+import UserDataSource
+  from "../../../../src/features/user/data/user-data-source";
 
 const MockPrismaClient = mock<PrismaClient>();
 const MockConversationDelegate = mock<Prisma.ConversationDelegate<any>>();
@@ -49,11 +59,39 @@ afterAll(() => {
 });
 
 describe('parsers', () => {
+  const userID = 'userIIIIIDDDDDDD';
+  const inputConversation: FullPrismaConversation = {
+    ...mockPrismaFullConversation,
+    participants: [
+      {
+        ...mockPrismaAuthUser,
+        id: '123',
+        user: {...mockPrismaUser, authUserID: '123'}
+      },
+      {
+        ...mockPrismaAuthUser,
+        id: userID,
+        user: {...mockPrismaUser, authUserID: userID}
+      },
+      {
+        ...mockPrismaAuthUser,
+        id: '321',
+        user: {...mockPrismaUser, authUserID: '321'},
+      },
+    ]
+  };
+  const outputConversation: Conversation = {
+    ...mockConversation,
+    participants: [
+      UserDataSource._getGraphQLUser(inputConversation.participants[0].user!),
+      UserDataSource._getGraphQLUser(inputConversation.participants[2].user!),
+    ],
+  };
   test('_getConversation', () => {
     // act
-    const result = ChatDataSource._getConversation(mockPrismaFullConversation);
+    const result = ChatDataSource._getConversation(inputConversation, userID);
     // assert
-    expect(result).toStrictEqual(mockConversation);
+    expect(result).toStrictEqual(outputConversation);
   });
   test('_getMessage', () => {
     // act
@@ -92,7 +130,7 @@ describe('createOneToOneConversation', function () {
     // act
     const result = await chatDS.findOrCreateOneToOneConversation(user1ID, user2ID);
     // expect
-    expect(result).toStrictEqual(ChatDataSource._getConversation(mockPrismaFullConversation));
+    expect(result).toStrictEqual(ChatDataSource._getConversation(mockPrismaFullConversation, user1ID));
     verifyFindMany();
     verify(MockConversationDelegate.create(anything())).never();
   });
@@ -104,7 +142,7 @@ describe('createOneToOneConversation', function () {
     // act
     const result = await chatDS.findOrCreateOneToOneConversation(user1ID, user2ID);
     // expect
-    expect(result).toStrictEqual(ChatDataSource._getConversation(mockPrismaFullConversation));
+    expect(result).toStrictEqual(ChatDataSource._getConversation(mockPrismaFullConversation, user1ID));
     verifyFindMany();
     verify(MockConversationDelegate.create(deepEqual({
       data: {
@@ -130,7 +168,7 @@ describe('getConversations', () => {
     // act
     const result = await chatDS.getConversations(user1ID);
     // assert
-    expect(result).toStrictEqual([ChatDataSource._getConversation(mockPrismaFullConversation)]);
+    expect(result).toStrictEqual([ChatDataSource._getConversation(mockPrismaFullConversation, user1ID)]);
     verify(MockConversationDelegate.findMany(deepEqual({
       where: {participants: {some: {id: user1ID}}},
       include: {

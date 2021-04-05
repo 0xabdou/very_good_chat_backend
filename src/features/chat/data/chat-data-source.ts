@@ -26,10 +26,13 @@ export default class ChatDataSource {
     this._prisma = prisma;
   }
 
-  async findOrCreateOneToOneConversation(user1ID: string, user2ID: string): Promise<Conversation> {
+  async findOrCreateOneToOneConversation(
+    userID: string,
+    otherUserID: string
+  ): Promise<Conversation> {
     const existingConversations = await this._prisma.conversation.findMany({
       where: {
-        participants: {every: {OR: [{id: user1ID}, {id: user2ID}]}},
+        participants: {every: {OR: [{id: userID}, {id: otherUserID}]}},
         type: PrismaConversationType.ONE_TO_ONE
       },
       include: {
@@ -41,12 +44,12 @@ export default class ChatDataSource {
       }
     });
     if (existingConversations[0]) {
-      return ChatDataSource._getConversation(existingConversations[0]);
+      return ChatDataSource._getConversation(existingConversations[0], userID);
     }
     const conversation = await this._prisma.conversation.create({
       data: {
         type: ConversationType.ONE_TO_ONE,
-        participants: {connect: [{id: user1ID}, {id: user2ID}]},
+        participants: {connect: [{id: userID}, {id: otherUserID}]},
         createdAt: new Date()
       },
       include: {
@@ -57,7 +60,7 @@ export default class ChatDataSource {
         }
       }
     });
-    return ChatDataSource._getConversation(conversation);
+    return ChatDataSource._getConversation(conversation, userID);
   }
 
   async getConversations(userID: string): Promise<Conversation[]> {
@@ -76,7 +79,7 @@ export default class ChatDataSource {
       },
       orderBy: {updatedAt: 'desc'}
     });
-    return conversations.map(ChatDataSource._getConversation);
+    return conversations.map(c => ChatDataSource._getConversation(c, userID));
   }
 
   async sendMessage(args: SendMessageArgs): Promise<Message> {
@@ -106,11 +109,15 @@ export default class ChatDataSource {
     return conversations.length > 0;
   }
 
-  static _getConversation(conversation: FullPrismaConversation): Conversation {
+  static _getConversation(
+    conversation: FullPrismaConversation,
+    currentUserID: string
+  ): Conversation {
     return {
       id: conversation.id,
       type: ConversationType[conversation.type],
-      participants: conversation.participants.map(p => UserDataSource._getGraphQLUser(p.user!)),
+      participants: conversation.participants.filter(p => p.id != currentUserID)
+        .map(p => UserDataSource._getGraphQLUser(p.user!)),
       messages: conversation.messages.map(ChatDataSource._getMessage)
     };
   }
