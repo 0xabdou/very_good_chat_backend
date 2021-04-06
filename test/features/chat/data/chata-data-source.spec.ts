@@ -82,6 +82,7 @@ describe('parsers', () => {
   };
   const outputConversation: Conversation = {
     ...mockConversation,
+    messages: [...mockConversation.messages].reverse(),
     participants: [
       UserDataSource._getGraphQLUser(inputConversation.participants[0].user!),
       UserDataSource._getGraphQLUser(inputConversation.participants[2].user!),
