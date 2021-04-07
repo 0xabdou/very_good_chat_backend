@@ -50,11 +50,19 @@ export class Message {
   @Field()
   sentAt!: Date;
 
-  @Field(() => [String])
-  deliveredTo!: string[];
+  @Field(() => [Delivery])
+  deliveredTo!: Delivery[];
 
-  @Field(() => [String])
-  seenBy!: string[];
+  @Field(() => [Delivery])
+  seenBy!: Delivery[];
+}
+
+@ObjectType()
+export class Delivery {
+  @Field()
+  userID!: string;
+  @Field()
+  date!: Date;
 }
 
 @ObjectType()

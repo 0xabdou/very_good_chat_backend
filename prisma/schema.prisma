@@ -21,8 +21,8 @@ model AuthUser {
     notifications       Notification[] @relation(name: "notification_owner")
     notificationFriend  Notification[] @relation(name: "notification_friend")
     conversations       Conversation[]
-    deliveredMessages   Message[] @relation(name: "delivered")
-    seenMessages        Message[] @relation(name: "seen")
+    deliveries          Delivery[]
+
     @@map("auth_users")
 }
 
@@ -49,8 +49,8 @@ model Friend {
    confirmed    Boolean @default(false)
    date         DateTime @updatedAt
 
-   @@map("friends")
    @@unique([user1ID, user2ID])
+   @@map("friends")
 }
 
 model Block {
@@ -61,8 +61,8 @@ model Block {
     blockedID   String @map("blocked_id")
     date        DateTime @updatedAt
 
-    @@map("blocks")
     @@unique([blockingID, blockedID])
+    @@map("blocks")
 }
 
 model Notification {
@@ -77,6 +77,7 @@ model Notification {
     friendID    String?
 
     @@unique([id, ownerID])
+    @@map("notifications")
 }
 
 enum NotificationType {
@@ -90,8 +91,8 @@ model Badge {
     badgeName       BadgeName
     lastOpened      DateTime
 
-    @@map("badges")
     @@unique([userID, badgeName])
+    @@map("badges")
 }
 
 enum BadgeName {
@@ -107,7 +108,9 @@ model Conversation {
     messages        Message[]
     type            ConversationType
     updatedAt       DateTime @updatedAt
-    createdAt       DateTime
+    createdAt       DateTime @default(now())
+
+    @@map("conversations")
 }
 
 enum ConversationType {
@@ -123,9 +126,10 @@ model Message {
     conversationID  Int
     text            String?
     medias          Media[]
-    sentAt          DateTime
-    deliveredTo     AuthUser[] @relation(name: "delivered")
-    seenBy          AuthUser[] @relation(name: "seen")
+    sentAt          DateTime @default(now())
+    deliveries      Delivery[]
+
+    @@map("messages")
 }
 
 model Media {
@@ -134,9 +138,28 @@ model Media {
     messageID   Int
     type        MediaType
     url         String
+
+    @@map("medias")
 }
 
 enum MediaType {
     IMAGE
     VIDEO
+}
+
+model Delivery {
+    message     Message @relation(fields:[messageID], references:[id])
+    messageID   Int
+    authUser    AuthUser @relation(fields: [userID], references: [id])
+    userID      String
+    type        DeliveryType
+    date        DateTime @default(now())
+
+    @@unique([userID, type])
+    @@map("deliveries")
+}
+
+enum DeliveryType {
+    DELIVERED
+    SEEN
 }

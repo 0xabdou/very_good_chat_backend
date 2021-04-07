@@ -5,6 +5,7 @@ import {
   Conversation as PrismaConversation,
   ConversationType as PrismaConversationType,
   Friend as PrismaFriend,
+  DeliveryType as PrismaDeliveryType,
   Media as PrismaMedia,
   MediaType as PrismaMediaType,
   User as PrismaUser,
@@ -149,8 +150,20 @@ export const mockPrismaMessage: FullPrismaMessage = {
   text: 'hello world',
   sentAt: new Date(),
   medias: [mockPrismaMedia],
-  deliveredTo: [mockPrismaAuthUser],
-  seenBy: [mockPrismaAuthUser],
+  deliveries: [
+    {
+      messageID: messageId,
+      userID: mockPrismaAuthUser.id,
+      type: PrismaDeliveryType.SEEN,
+      date: new Date()
+    },
+    {
+      messageID: messageId,
+      userID: mockPrismaAuthUser.id,
+      type: PrismaDeliveryType.DELIVERED,
+      date: new Date()
+    }
+  ]
 };
 
 
@@ -179,8 +192,12 @@ export const mockMessage: Message = {
   text: mockPrismaMessage.text ?? undefined,
   medias: [mockMedia],
   sentAt: mockPrismaMessage.sentAt,
-  deliveredTo: mockPrismaMessage.deliveredTo.map(u => u.id),
-  seenBy: mockPrismaMessage.seenBy.map(u => u.id),
+  deliveredTo: mockPrismaMessage.deliveries
+    .filter(d => d.type == PrismaDeliveryType.DELIVERED)
+    .map(d => ({userID: d.userID, date: d.date})),
+  seenBy: mockPrismaMessage.deliveries
+    .filter(d => d.type == PrismaDeliveryType.SEEN)
+    .map(d => ({userID: d.userID, date: d.date})),
 };
 
 export const mockConversation: Conversation = {

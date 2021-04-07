@@ -1,6 +1,7 @@
 import {
   Conversation,
   ConversationType,
+  Delivery,
   Media,
   MediaType,
   Message
@@ -9,6 +10,8 @@ import {
   AuthUser as PrismaAuthUser,
   Conversation as PrismaConversation,
   ConversationType as PrismaConversationType,
+  Delivery as PrismaDelivery,
+  DeliveryType as PrismaDeliveryType,
   Media as PrismaMedia,
   Message as PrismaMessage,
   PrismaClient,
@@ -39,7 +42,7 @@ export default class ChatDataSource {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {medias: true, seenBy: true, deliveredTo: true}
+          include: {medias: true, deliveries: true}
         }
       }
     });
@@ -56,7 +59,7 @@ export default class ChatDataSource {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {medias: true, seenBy: true, deliveredTo: true}
+          include: {medias: true, deliveries: true}
         }
       }
     });
@@ -70,11 +73,7 @@ export default class ChatDataSource {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {
-            medias: true,
-            seenBy: true,
-            deliveredTo: true,
-          }
+          include: {medias: true, deliveries: true}
         }
       },
       orderBy: {updatedAt: 'desc'}
@@ -93,11 +92,7 @@ export default class ChatDataSource {
           create: args.medias,
         } : undefined
       },
-      include: {
-        medias: true,
-        seenBy: true,
-        deliveredTo: true,
-      }
+      include: {medias: true, deliveries: true}
     });
     return ChatDataSource._getMessage(message);
   }
@@ -123,6 +118,18 @@ export default class ChatDataSource {
   }
 
   static _getMessage(message: FullPrismaMessage): Message {
+    const deliveredTo: Delivery[] = [];
+    const seenBy: Delivery[] = [];
+    message.deliveries.forEach(d => {
+      const delivery: Delivery = {userID: d.userID, date: d.date};
+      switch (d.type) {
+        case PrismaDeliveryType.DELIVERED:
+          deliveredTo.push(delivery);
+          break;
+        case PrismaDeliveryType.SEEN:
+          seenBy.push(delivery);
+      }
+    });
     return {
       id: message.id,
       conversationID: message.conversationID,
@@ -130,8 +137,8 @@ export default class ChatDataSource {
       text: message.text ?? undefined,
       medias: message.medias.map(ChatDataSource._getMedia),
       sentAt: message.sentAt,
-      deliveredTo: message.deliveredTo.map(au => au.id),
-      seenBy: message.seenBy.map(au => au.id),
+      deliveredTo,
+      seenBy
     };
   }
 
@@ -158,7 +165,6 @@ export type FullPrismaConversation = PrismaConversation & {
 }
 
 export type FullPrismaMessage = PrismaMessage & {
-  seenBy: PrismaAuthUser[],
-  deliveredTo: PrismaAuthUser[],
   medias: PrismaMedia[]
+  deliveries: PrismaDelivery[],
 }
