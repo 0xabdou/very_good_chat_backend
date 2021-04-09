@@ -127,24 +127,8 @@ export class UserResolver {
     Promise<ResizedPhotos> {
     try {
       const fileUtils = context.toolBox.utils.file;
-      const uploader = context.toolBox.dataSources.uploader;
       const userID = context.userID!;
-      const tempFilePath = await fileUtils.saveTempFile(photo);
-      const paths = await fileUtils.generateResizedPhotos(tempFilePath);
-      const promises = [
-        uploader.uploadAvatar({userID, photoPath: paths.source}),
-        uploader.uploadAvatar({userID, photoPath: paths.medium}),
-        uploader.uploadAvatar({userID, photoPath: paths.small}),
-      ];
-      const urls = await Promise.all(promises);
-      for (let path of Object.values(paths)) {
-        fileUtils.deleteTempFile(path);
-      }
-      return {
-        source: urls[0],
-        medium: urls[1],
-        small: urls[2]
-      };
+      return fileUtils.saveAvatar(photo, userID);
     } catch (e) {
       console.log(e);
       throw new ApolloError(

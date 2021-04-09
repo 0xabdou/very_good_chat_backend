@@ -18,12 +18,13 @@ import NotificationResolver from "./features/notification/graphql/resolver";
 import BlockResolver from "./features/block/graphql/resolver";
 import ChatResolver from "./features/chat/graphql/resolver";
 import {Tokens} from "./features/auth/data/tokens";
+import path from "path";
 
 const createApp = async (toolBox: ToolBox): Promise<[ApolloServer, Express]> => {
   const app = express();
   const CORS = cors(corsOptions);
 
-  app.use(express.static('storage'));
+  app.use(express.static(path.join(__dirname, '../storage')));
   app.use(cookieParser(process.env.COOKIE_SECRET));
   app.use(graphqlUploadExpress({maxFileSize: 10000000, maxFiles: 10}));
   // Token related auth stuff are not handled by this express middleware
