@@ -12,10 +12,12 @@ import NotificationDataSource
   from "../features/notification/data/notification-data-source";
 import BlockDataSource from "../features/block/data/block-data-source";
 import ChatDataSource from "../features/chat/data/chat-data-source";
+import {ExecutionParams} from 'subscriptions-transport-ws';
 
 type Context = {
   req: Request,
   res: Response,
+  connection?: ExecutionParams,
   userID?: string,
   toolBox: ToolBox,
 }

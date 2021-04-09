@@ -97,11 +97,22 @@ export default class ChatDataSource {
     return ChatDataSource._getMessage(message);
   }
 
-  async canSendMessage(conversationID: number, senderID: string): Promise<boolean> {
+  async getMinimalConversation(
+    conversationID: number,
+    senderID: string
+  ): Promise<MinimalConversation | null> {
     const conversations = await this._prisma.conversation.findMany({
-      where: {id: conversationID, participants: {some: {id: senderID}}}
+      where: {id: conversationID, participants: {some: {id: senderID}}},
+      include: {participants: true}
     });
-    return conversations.length > 0;
+    if (conversations.length) {
+      return {
+        id: conversations[0].id,
+        type: ConversationType[conversations[0].type],
+        participantsIDs: conversations[0].participants.map(p => p.id)
+      };
+    }
+    return null;
   }
 
   static _getConversation(
@@ -148,6 +159,12 @@ export default class ChatDataSource {
       url: media.url
     };
   }
+}
+
+export type MinimalConversation = {
+  id: number,
+  type: ConversationType,
+  participantsIDs: string[]
 }
 
 export type SendMessageArgs = {

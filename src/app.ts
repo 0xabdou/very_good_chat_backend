@@ -1,5 +1,5 @@
 import container from "./service-locator/container";
-import express from "express";
+import express, {Express} from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import {graphqlUploadExpress} from "graphql-upload";
@@ -17,8 +17,9 @@ import BadgeResolver from "./features/badge/graphql/resolver";
 import NotificationResolver from "./features/notification/graphql/resolver";
 import BlockResolver from "./features/block/graphql/resolver";
 import ChatResolver from "./features/chat/graphql/resolver";
+import {Tokens} from "./features/auth/data/tokens";
 
-const createApp = async (toolBox: ToolBox) => {
+const createApp = async (toolBox: ToolBox): Promise<[ApolloServer, Express]> => {
   const app = express();
   const CORS = cors(corsOptions);
 
@@ -45,10 +46,24 @@ const createApp = async (toolBox: ToolBox) => {
   const server = new ApolloServer({
     schema,
     uploads: false,
-    context: ({req, res}): Context => {
+    subscriptions: {
+      onConnect: (connectionParams: any, webSocket, context) => {
+        console.log('Connected!');
+        const accessToken = connectionParams.accessToken;
+        const tokens = container.get<Tokens>(TYPES.Tokens);
+        const userID = tokens.verifyAccessToken(accessToken);
+        return {userID};
+      },
+      onDisconnect: (webSocket, context) => {
+        console.log('Disconnected!');
+      },
+      path: '/subscriptions'
+    },
+    context: ({req, res, connection}): Context => {
       return {
         req,
         res,
+        connection,
         toolBox
       };
     }
@@ -57,7 +72,7 @@ const createApp = async (toolBox: ToolBox) => {
     app,
     cors: corsOptions as GetMiddlewareOptions['cors'],
   });
-  return app;
+  return [server, app];
 };
 
 export default createApp;

@@ -14,6 +14,7 @@ import {
 } from "ts-mockito";
 import ChatDataSource, {
   FullPrismaConversation,
+  MinimalConversation,
   SendMessageArgs
 } from "../../../../src/features/chat/data/chat-data-source";
 import {
@@ -21,7 +22,6 @@ import {
   mockMedia,
   mockMessage,
   mockPrismaAuthUser,
-  mockPrismaConversation,
   mockPrismaFullConversation,
   mockPrismaMedia,
   mockPrismaMessage,
@@ -213,36 +213,42 @@ describe('sendMessage', () => {
   });
 });
 
-describe('canSendMessage', () => {
+describe('getMinimalConversation', () => {
   const conversationID = 911;
   const senderID = 'sender IDDDDD';
-
   it(
-    'should return true if there is a conversation that has a participant with the senderID',
+    'should return a minimal conversation that has a participant with the senderID if it exists',
     async () => {
       // arrange
-      when(MockConversationDelegate.findMany(anything())).thenResolve([mockPrismaConversation]);
+      when(MockConversationDelegate.findMany(anything())).thenResolve([mockPrismaFullConversation]);
+      const expected: MinimalConversation = {
+        id: mockPrismaFullConversation.id,
+        type: ConversationType[mockPrismaFullConversation.type],
+        participantsIDs: mockPrismaFullConversation.participants.map(p => p.id)
+      };
       // act
-      const result = await chatDS.canSendMessage(conversationID, senderID);
+      const result = await chatDS.getMinimalConversation(conversationID, senderID);
       // assert
-      expect(result).toBe(true);
+      expect(result).toStrictEqual(expected);
       verify(MockConversationDelegate.findMany(deepEqual({
-        where: {id: conversationID, participants: {some: {id: senderID}}}
+        where: {id: conversationID, participants: {some: {id: senderID}}},
+        include: {participants: true}
       }))).once();
     }
   );
 
   it(
-    'should return false if there is no conversation that has a participant with the senderID',
+    'should return null if there is no conversation that has a participant with the senderID',
     async () => {
       // arrange
       when(MockConversationDelegate.findMany(anything())).thenResolve([]);
       // act
-      const result = await chatDS.canSendMessage(conversationID, senderID);
+      const result = await chatDS.getMinimalConversation(conversationID, senderID);
       // assert
-      expect(result).toBe(false);
+      expect(result).toBeNull();
       verify(MockConversationDelegate.findMany(deepEqual({
-        where: {id: conversationID, participants: {some: {id: senderID}}}
+        where: {id: conversationID, participants: {some: {id: senderID}}},
+        include: {participants: true}
       }))).once();
     }
   );

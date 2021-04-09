@@ -10,7 +10,7 @@ const whitelist = [
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     // To be able to download schema in client project using intellij plugin
-    console.log('ORIGIN IS: ', origin);
+    //console.log('ORIGIN IS: ', origin);
     if (!origin) {
       callback(null, true);
       return;

@@ -8,11 +8,11 @@ import {
   verify,
   when
 } from "ts-mockito";
-import ChatDataSource
-  from "../../../../src/features/chat/data/chat-data-source";
-import ChatResolver from "../../../../src/features/chat/graphql/resolver";
+import ChatDataSource, {MinimalConversation} from "../../../../src/features/chat/data/chat-data-source";
+import ChatResolver, {MessageSubscriptionPayload} from "../../../../src/features/chat/graphql/resolver";
 import {
   Conversation,
+  ConversationType,
   MediaType,
   SendMessageInput
 } from "../../../../src/features/chat/graphql/types";
@@ -21,10 +21,12 @@ import {ApolloError, UserInputError} from "apollo-server-express";
 import FileUtils from "../../../../src/shared/utils/file-utils";
 import {FileUpload} from "graphql-upload";
 import {IUploader} from "../../../../src/shared/apis/uploader";
+import {Publisher} from "type-graphql";
 
 const MockChatDS = mock<ChatDataSource>();
 const MockFileUtils = mock<FileUtils>();
 const MockUploader = mock<IUploader>();
+const MockPublish = mock<{ pub: Publisher<MessageSubscriptionPayload> }>();
 const userID = 'userIDDDD';
 const context = {
   userID,
@@ -45,6 +47,7 @@ beforeEach(() => {
   reset(MockChatDS);
   reset(MockFileUtils);
   reset(MockUploader);
+  reset(MockPublish);
 });
 
 describe('getOrCreateOTOConversation', () => {
@@ -78,7 +81,7 @@ describe('getConversations', () => {
 describe('sendMessage', () => {
   const getThrownError = async (input: SendMessageInput) => {
     try {
-      await resolver.sendMessage(context, input);
+      await resolver.sendMessage(context, input, instance(MockPublish).pub);
     } catch (e) {
       return e;
     }
@@ -122,18 +125,23 @@ describe('sendMessage', () => {
 
   it('should throw an error if the message cannot be sent', async () => {
     // arrange
-    when(MockChatDS.canSendMessage(anything(), anything())).thenResolve(false);
+    when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(null);
     // act
     const error = await getThrownError(input) as ApolloError;
     // assert
     expect(error.extensions.code).toBe('MESSAGE_CANNOT_BE_SENT');
-    verify(MockChatDS.canSendMessage(input.conversationID, userID)).once();
+    verify(MockChatDS.getMinimalConversation(input.conversationID, userID)).once();
   });
 
   it('should send the message if all is good', async () => {
     // arrange
     // user can send message
-    when(MockChatDS.canSendMessage(anything(), anything())).thenResolve(true);
+    const minCov: MinimalConversation = {
+      id: 11324,
+      type: ConversationType.ONE_TO_ONE,
+      participantsIDs: ['1313', '13123']
+    };
+    when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(minCov);
     // stub temp file saving
     const tempURLs = Array.from({length: input.medias!.length}, (_, i) => `temp_${i}`);
     let i = 0;
@@ -149,7 +157,7 @@ describe('sendMessage', () => {
     // stub message sending
     when(MockChatDS.sendMessage(anything())).thenResolve(mockMessage);
     // act
-    const result = await resolver.sendMessage(context, input);
+    const result = await resolver.sendMessage(context, input, instance(MockPublish).pub);
     // assert
     expect(result).toStrictEqual(mockMessage);
     for (let upload of input.medias!)
@@ -165,6 +173,9 @@ describe('sendMessage', () => {
         url: uploadedURLs[i],
         type: MediaType.IMAGE
       }))
+    }))).once();
+    verify(MockPublish.pub(deepEqual({
+      message: mockMessage, receivers: minCov.participantsIDs
     }))).once();
   });
 });

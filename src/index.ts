@@ -5,14 +5,15 @@ import TYPES from "./service-locator/types";
 
 const bootstrap = async () => {
   await initContainer();
-  const app = await createApp(container.get(TYPES.ToolBox));
+  const [server, app] = await createApp(container.get(TYPES.ToolBox));
   const port = process.env.PORT || 4000;
-  app.listen(port, () => {
+  const expressServer = app.listen(port, () => {
     console.log(`
     🚀 Server is up and running.
     🎉 Listening on port ${port}.
   `);
   });
+  server.installSubscriptionHandlers(expressServer);
 };
 
 void bootstrap();
