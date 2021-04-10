@@ -12,7 +12,7 @@ import UserDataSource
   from "../../../../src/features/user/data/user-data-source";
 import Context from "../../../../src/shared/context";
 import {UserValidators} from "../../../../src/features/user/graphql/validators";
-import FileUtils, {ResizedPhotos} from "../../../../src/shared/utils/file-utils";
+import FileUtils from "../../../../src/shared/utils/file-utils";
 import {UserResolver} from "../../../../src/features/user/graphql/resolver";
 import {
   mockGraphQLUser,
@@ -24,14 +24,12 @@ import {
   UserUpdate
 } from "../../../../src/features/user/graphql/types";
 import {FileUpload} from "graphql-upload";
-import {IUploader} from "../../../../src/shared/apis/uploader";
 import BlockDataSource
   from "../../../../src/features/block/data/block-data-source";
 
 const MockUserDS = mock<UserDataSource>();
 const MockBlockDS = mock<BlockDataSource>();
 const MockUserValidators = mock<UserValidators>();
-const MockUploader = mock<IUploader>();
 const MockFileUtils = mock<FileUtils>();
 
 const userID = 'userIDDDD';
@@ -46,7 +44,6 @@ const context = {
     dataSources: {
       userDS: instance(MockUserDS),
       blockDS: instance(MockBlockDS),
-      uploader: instance(MockUploader),
     },
     validators: {
       user: instance(MockUserValidators)
@@ -62,7 +59,6 @@ const resolver = new UserResolver();
 beforeEach(() => {
   resetCalls(MockUserDS);
   resetCalls(MockUserValidators);
-  resetCalls(MockUploader);
   resetCalls(MockFileUtils);
 });
 
@@ -100,7 +96,6 @@ describe('register', () => {
     name: 'name',
     photo: {} as Promise<FileUpload>
   };
-  const photoURL = '/photo.png';
 
   const act = () => resolver.register(context, creation);
   const getThrownError = async () => {
@@ -166,14 +161,13 @@ describe('register', () => {
     // act
     const result = await resolver.register(context, noPhotoCreation);
     // assert
-    verify(MockFileUtils.saveTempFile(anything())).never();
-    verify(MockUploader.uploadAvatar(anything())).never();
+    verify(MockFileUtils.saveAvatar(anything(), anything())).never();
     expect(result).toStrictEqual(mockMe);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveTempFile(anything()))
+    when(MockFileUtils.saveAvatar(anything(), anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
@@ -181,58 +175,10 @@ describe('register', () => {
     expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
   });
 
-  it('should throw an error if the sent photo failed to upload', async () => {
-    // arrange
-    when(MockUploader.uploadAvatar(anything()))
-      .thenReject(new Error('Failed to upload'));
-    // act
-    const error = await getThrownError();
-    // assert
-    expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
-  });
-
-  it('should save -> upload -> delete temp photo if it is sent, ', async () => {
-    // arrange
-    const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempFile(anything()))
-      .thenResolve(path);
-    when(MockFileUtils.generateResizedPhotos(anything()))
-      .thenResolve(mockResizedPhotos);
-    when(MockUploader.uploadAvatar(anything()))
-      .thenResolve(photoURL);
-    // act
-    await act();
-    // assert
-    verify(MockFileUtils.saveTempFile(creation.photo!)).once();
-    verify(MockFileUtils.generateResizedPhotos(path)).once();
-    for (let photoPath of Object.values(mockResizedPhotos)) {
-      verify(MockUploader.uploadAvatar(deepEqual({photoPath, userID})))
-        .once();
-      verify(MockFileUtils.deleteTempFile(photoPath)).once();
-    }
-  });
-
   it('should create the user and return it if al goes well', async () => {
     // arrange
-    const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempFile(anything()))
-      .thenResolve(path);
-    when(MockFileUtils.generateResizedPhotos(anything()))
+    when(MockFileUtils.saveAvatar(anything(), anything()))
       .thenResolve(mockResizedPhotos);
-    const uploaded: ResizedPhotos = {
-      source: 'uploaded_source',
-      medium: 'uploaded_medium',
-      small: 'uploaded_small'
-    };
-    when(MockUploader.uploadAvatar(deepEqual({
-      userID, photoPath: mockResizedPhotos.source
-    }))).thenResolve(uploaded.source);
-    when(MockUploader.uploadAvatar(deepEqual({
-      userID, photoPath: mockResizedPhotos.medium
-    }))).thenResolve(uploaded.medium);
-    when(MockUploader.uploadAvatar(deepEqual({
-      userID, photoPath: mockResizedPhotos.small
-    }))).thenResolve(uploaded.small);
     // act
     const result = await act();
     // assert
@@ -240,7 +186,7 @@ describe('register', () => {
       authUserID: userID,
       username: creation.username,
       name: creation.name ?? undefined,
-      photo: uploaded
+      photo: mockResizedPhotos
     }))).once();
     expect(result).toStrictEqual(mockMe);
   });
@@ -328,50 +274,18 @@ describe('updateUser', () => {
     // act
     const result = await resolver.updateUser(context, noPhotoUpdate);
     // assert
-    verify(MockFileUtils.saveTempFile(anything())).never();
-    verify(MockUploader.uploadAvatar(anything())).never();
+    verify(MockFileUtils.saveAvatar(anything(), anything())).never();
     expect(result).toStrictEqual(mockMe);
   });
 
   it('should throw an error if the sent photo failed to save', async () => {
     // arrange
-    when(MockFileUtils.saveTempFile(anything()))
+    when(MockFileUtils.saveAvatar(anything(), anything()))
       .thenReject(new Error('Failed to save'));
     // act
     const error = await getThrownError();
     // assert
     expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
-  });
-
-  it('should throw an error if the sent photo failed to upload', async () => {
-    // arrange
-    when(MockUploader.uploadAvatar(anything()))
-      .thenReject(new Error('Failed to upload'));
-    // act
-    const error = await getThrownError();
-    // assert
-    expect(error.extensions.code).toBe('INTERNAL_SERVER_ERROR');
-  });
-
-  it('should save -> upload -> delete temp photo if it is sent, ', async () => {
-    // arrange
-    const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempFile(anything()))
-      .thenResolve(path);
-    when(MockFileUtils.generateResizedPhotos(anything()))
-      .thenResolve(mockResizedPhotos);
-    when(MockUploader.uploadAvatar(anything()))
-      .thenResolve(photoURL);
-    // act
-    await act();
-    // assert
-    verify(MockFileUtils.saveTempFile(update.photo!)).once();
-    verify(MockFileUtils.generateResizedPhotos(path)).once();
-    for (let photoPath of Object.values(mockResizedPhotos)) {
-      verify(MockUploader.uploadAvatar(deepEqual({photoPath, userID})))
-        .once();
-      verify(MockFileUtils.deleteTempFile(photoPath)).once();
-    }
   });
 
   it('should update the user and return it if al goes well', async () => {
@@ -380,25 +294,8 @@ describe('updateUser', () => {
       ...update,
       deleteName: true,
     };
-    const path = 'paaaaaaathhhhhhhhhhh';
-    when(MockFileUtils.saveTempFile(anything()))
-      .thenResolve(path);
-    when(MockFileUtils.generateResizedPhotos(anything()))
+    when(MockFileUtils.saveAvatar(anything(), anything()))
       .thenResolve(mockResizedPhotos);
-    const uploaded: ResizedPhotos = {
-      source: 'uploaded_source',
-      medium: 'uploaded_medium',
-      small: 'uploaded_small'
-    };
-    when(MockUploader.uploadAvatar(deepEqual({
-      userID, photoPath: mockResizedPhotos.source
-    }))).thenResolve(uploaded.source);
-    when(MockUploader.uploadAvatar(deepEqual({
-      userID, photoPath: mockResizedPhotos.medium
-    }))).thenResolve(uploaded.medium);
-    when(MockUploader.uploadAvatar(deepEqual({
-      userID, photoPath: mockResizedPhotos.small
-    }))).thenResolve(uploaded.small);
     // act
     const result = await resolver.updateUser(context, up);
     // assert
@@ -408,7 +305,7 @@ describe('updateUser', () => {
       username: up.username,
       name: up.name,
       deleteName: !!up.deleteName,
-      photo: uploaded,
+      photo: mockResizedPhotos,
       deletePhoto: !!up.deletePhoto,
     }))).once();
   });

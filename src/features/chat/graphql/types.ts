@@ -81,6 +81,14 @@ export enum MediaType {
 
 registerEnumType(MediaType, {name: 'MediaType'});
 
+@ObjectType()
+export class MessageSub {
+  @Field(() => Message)
+  message!: Message;
+  @Field({nullable: true})
+  update?: boolean;
+}
+
 @InputType()
 export class SendMessageInput {
   @Field(() => Int)

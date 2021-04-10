@@ -1,6 +1,7 @@
 import {
   Arg,
   Ctx,
+  Int,
   Mutation,
   Publisher,
   PubSub,
@@ -17,6 +18,7 @@ import {
   Media,
   MediaType,
   Message,
+  MessageSub,
   SendMessageInput
 } from "./types";
 import isAuthenticated from "../../auth/graphql/is-authenticated";
@@ -105,21 +107,51 @@ export default class ChatResolver {
     return sentMessage;
   }
 
-  @Subscription(() => Message, {
+  @Mutation(() => Int)
+  @UseMiddleware(isAuthenticated)
+  async messagesDelivered(
+    @Ctx() context: Context,
+    @PubSub('MESSAGES') publish: Publisher<MessageSubscriptionPayload>,
+    @Arg('conversationIDs', () => [Int]) conversationIDs: number[]
+  ): Promise<number> {
+    const result = await context.toolBox.dataSources.chatDS.messagesDelivered(
+      conversationIDs, context.userID!
+    );
+    result.map(message => publish({message, update: true, receivers: []}));
+    return result.length;
+  }
+
+  @Mutation(() => Int)
+  @UseMiddleware(isAuthenticated)
+  async messagesSeen(
+    @Ctx() context: Context,
+    @PubSub('MESSAGES') publish: Publisher<MessageSubscriptionPayload>,
+    @Arg('conversationID', () => Int) conversationID: number
+  ): Promise<number> {
+    const result = await context.toolBox.dataSources.chatDS.messagesSeen(
+      conversationID, context.userID!
+    );
+    result.map(message => publish({message, update: true, receivers: []}));
+    return result.length;
+  }
+
+  @Subscription(() => MessageSub, {
     topics: 'MESSAGES',
     filter: (data: ResolverFilterData<MessageSubscriptionPayload, any, Context>) => {
       const {context, payload} = data;
       const userID = context.connection?.context.userID;
-      if (payload.message.senderID == userID) return false;
-      return payload.receivers.indexOf(userID) != -1;
+      if (payload.update) return payload.message.senderID == userID;
+      return payload.message.senderID != userID
+        && payload.receivers.indexOf(userID) != -1;
     },
   })
-  subscribeToMessages(@Root() {message}: MessageSubscriptionPayload): Message {
-    return message;
+  messages(@Root() {message, update}: MessageSubscriptionPayload): MessageSub {
+    return {message, update};
   }
 }
 
 export type MessageSubscriptionPayload = {
   message: Message,
   receivers: string[],
+  update?: boolean,
 }

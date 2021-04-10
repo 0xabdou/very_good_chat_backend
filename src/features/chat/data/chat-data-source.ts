@@ -115,6 +115,75 @@ export default class ChatDataSource {
     return null;
   }
 
+  async messagesDelivered(conversationIDs: number[], userID: string): Promise<Message[]> {
+    const result = await this._prisma.conversation.findMany({
+      where: {
+        id: {in: conversationIDs},
+        participants: {some: {id: userID}}
+      },
+      include: {
+        messages: {
+          where: {
+            senderID: {not: userID},
+            deliveries: {
+              none: {userID, type: PrismaDeliveryType.DELIVERED}
+            }
+          }
+        }
+      }
+    });
+    const messagesIDs: number[] = result.reduce((ids: number[], conv) => {
+      return [
+        ...ids,
+        ...conv.messages.map(m => m.id)
+      ];
+    }, []);
+    if (!messagesIDs.length) return [];
+    const promises = messagesIDs.map(messageID => {
+      return this._prisma.delivery.create({
+        data: {userID, messageID, type: PrismaDeliveryType.DELIVERED},
+        include: {message: {include: {deliveries: true, medias: true}}}
+      });
+    });
+    const results = await Promise.all(promises);
+    return results.map(d => ChatDataSource._getMessage(d.message));
+  }
+
+  async messagesSeen(conversationID: number, userID: string): Promise<Message[]> {
+    const result = await this._prisma.conversation.findMany({
+      where: {
+        id: conversationID,
+        participants: {some: {id: userID}}
+      },
+      include: {
+        messages: {
+          where: {
+            senderID: {not: userID},
+            deliveries: {none: {userID, type: PrismaDeliveryType.SEEN}}
+          },
+          orderBy: {sentAt: 'asc'}
+        }
+      }
+    });
+    const messagesIDs: number[] = result.reduce((ids: number[], conv) => {
+      return [...ids, ...conv.messages.map(m => m.id)];
+    }, []);
+    if (!messagesIDs.length) return [];
+    const promises = messagesIDs.map(messageID => {
+      return this._prisma.delivery.create({
+        data: {
+          userID,
+          messageID,
+          type: PrismaDeliveryType.SEEN,
+          date: new Date()
+        },
+        include: {message: {include: {deliveries: true, medias: true}}}
+      });
+    });
+    const results = await Promise.all(promises);
+    return results.map(d => ChatDataSource._getMessage(d.message));
+  }
+
   static _getConversation(
     conversation: FullPrismaConversation,
     currentUserID: string

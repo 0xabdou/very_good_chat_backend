@@ -155,7 +155,7 @@ model Delivery {
     type        DeliveryType
     date        DateTime @default(now())
 
-    @@unique([userID, type])
+    @@unique([messageID, userID, type])
     @@map("deliveries")
 }
 

@@ -128,7 +128,7 @@ export class UserResolver {
     try {
       const fileUtils = context.toolBox.utils.file;
       const userID = context.userID!;
-      return fileUtils.saveAvatar(photo, userID);
+      return await fileUtils.saveAvatar(photo, userID);
     } catch (e) {
       console.log(e);
       throw new ApolloError(
