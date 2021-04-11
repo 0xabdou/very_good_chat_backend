@@ -4,8 +4,8 @@ import {
   Block as PrismaBlock,
   Conversation as PrismaConversation,
   ConversationType as PrismaConversationType,
-  Friend as PrismaFriend,
   DeliveryType as PrismaDeliveryType,
+  Friend as PrismaFriend,
   Media as PrismaMedia,
   MediaType as PrismaMediaType,
   User as PrismaUser,
@@ -143,7 +143,7 @@ export const mockPrismaMedia: PrismaMedia = {
   url: 'https://picsum.org/420x69',
 };
 
-export const mockPrismaMessage: FullPrismaMessage = {
+export const mockFullPrismaMessage: FullPrismaMessage = {
   id: messageId,
   conversationID: mockPrismaConversation.id,
   senderID: mockPrismaAuthUser.id,
@@ -167,7 +167,7 @@ export const mockPrismaMessage: FullPrismaMessage = {
 };
 
 
-export const mockPrismaFullConversation: FullPrismaConversation = {
+export const mockFullPrismaConversation: FullPrismaConversation = {
   ...mockPrismaConversation,
   participants: [
     {
@@ -176,7 +176,7 @@ export const mockPrismaFullConversation: FullPrismaConversation = {
     }
   ],
   messages: [
-    {...mockPrismaMessage, medias: [mockPrismaMedia]}
+    {...mockFullPrismaMessage, medias: [mockPrismaMedia]}
   ]
 };
 
@@ -186,23 +186,23 @@ export const mockMedia: Media = {
 };
 
 export const mockMessage: Message = {
-  id: mockPrismaMessage.id,
-  conversationID: mockPrismaMessage.conversationID,
-  senderID: mockPrismaMessage.senderID,
-  text: mockPrismaMessage.text ?? undefined,
+  id: mockFullPrismaMessage.id,
+  conversationID: mockFullPrismaMessage.conversationID,
+  senderID: mockFullPrismaMessage.senderID,
+  text: mockFullPrismaMessage.text ?? undefined,
   medias: [mockMedia],
-  sentAt: mockPrismaMessage.sentAt,
-  deliveredTo: mockPrismaMessage.deliveries
+  sentAt: mockFullPrismaMessage.sentAt,
+  deliveredTo: mockFullPrismaMessage.deliveries
     .filter(d => d.type == PrismaDeliveryType.DELIVERED)
     .map(d => ({userID: d.userID, date: d.date})),
-  seenBy: mockPrismaMessage.deliveries
+  seenBy: mockFullPrismaMessage.deliveries
     .filter(d => d.type == PrismaDeliveryType.SEEN)
     .map(d => ({userID: d.userID, date: d.date})),
 };
 
 export const mockConversation: Conversation = {
-  id: mockPrismaFullConversation.id,
-  type: ConversationType[mockPrismaFullConversation.type],
+  id: mockFullPrismaConversation.id,
+  type: ConversationType[mockFullPrismaConversation.type],
   participants: [mockGraphQLUser],
   messages: [mockMessage]
 };

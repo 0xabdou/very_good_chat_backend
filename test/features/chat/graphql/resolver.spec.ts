@@ -14,6 +14,7 @@ import {
   Conversation,
   ConversationType,
   MediaType,
+  Message,
   SendMessageInput
 } from "../../../../src/features/chat/graphql/types";
 import {mockConversation, mockMessage} from "../../../mock-objects";
@@ -21,7 +22,7 @@ import {ApolloError, UserInputError} from "apollo-server-express";
 import FileUtils from "../../../../src/shared/utils/file-utils";
 import {FileUpload} from "graphql-upload";
 import {IUploader} from "../../../../src/shared/apis/uploader";
-import {Publisher} from "type-graphql";
+import {Publisher, ResolverFilterData} from "type-graphql";
 
 const MockChatDS = mock<ChatDataSource>();
 const MockFileUtils = mock<FileUtils>();
@@ -177,5 +178,107 @@ describe('sendMessage', () => {
     verify(MockPublish.pub(deepEqual({
       message: mockMessage, receivers: minCov.participantsIDs
     }))).once();
+  });
+});
+
+describe('messages(Delivered/Seen)', () => {
+  const messages: Message[] = [{...mockMessage, id: 0}, {
+    ...mockMessage,
+    id: 1
+  }];
+  it('should return the number of delivered messages and notify subscriptions', async () => {
+    // arrange
+    const cIDs = [1, 2];
+    when(MockChatDS.messagesDelivered(anything(), anything())).thenResolve(messages);
+    // act
+    const result = await resolver.messagesDelivered(context, instance(MockPublish).pub, cIDs);
+    // assert
+    expect(result).toStrictEqual(messages.length);
+    verify(MockChatDS.messagesDelivered(cIDs, userID)).once();
+    messages.forEach(message => verify(MockPublish.pub(deepEqual({
+      message,
+      update: true
+    }))));
+  });
+
+  it('should return the number of delivered messages and notify subscriptions', async () => {
+    // arrange
+    const cID = 123123;
+    when(MockChatDS.messagesSeen(anything(), anything())).thenResolve(messages);
+    // act
+    const result = await resolver.messagesSeen(context, instance(MockPublish).pub, cID);
+    // assert
+    expect(result).toStrictEqual(messages.length);
+    verify(MockChatDS.messagesSeen(cID, userID)).once();
+    messages.forEach(message => verify(MockPublish.pub(deepEqual({
+      message,
+      update: true
+    }))));
+  });
+});
+
+describe('messages', () => {
+  describe('filter', () => {
+    const context = {connection: {context: {userID}}};
+    it("should return true, if it's an update, and the userID is the senderID", () => {
+      // act
+      const result = ChatResolver.messagesFilter({
+        context,
+        payload: {update: true, message: {...mockMessage, senderID: userID}},
+      } as ResolverFilterData<MessageSubscriptionPayload, any, Context>);
+      // assert
+      expect(result).toBe(true);
+    });
+    it("should return false, if it's an update, and the userID is not the senderID", () => {
+      // act
+      const result = ChatResolver.messagesFilter({
+        context: context,
+        payload: {
+          update: true,
+          message: {...mockMessage, senderID: 'zbboblblajsdlada'}
+        },
+      } as ResolverFilterData<MessageSubscriptionPayload, any, Context>);
+      // assert
+      expect(result).toBe(false);
+    });
+    it("should return false, if it's not an update, there are no receivers", () => {
+      // act
+      const result = ChatResolver.messagesFilter({
+        context: context,
+        payload: {message: mockMessage},
+      } as ResolverFilterData<MessageSubscriptionPayload, any, Context>);
+      // assert
+      expect(result).toBe(false);
+    });
+    it("should return false, if it's not an update, and the userID is not among receivers", () => {
+      // act
+      const result = ChatResolver.messagesFilter({
+        context: context,
+        payload: {message: mockMessage, receivers: ['blabl', 'yohoo']},
+      } as ResolverFilterData<MessageSubscriptionPayload, any, Context>);
+      // assert
+      expect(result).toBe(false);
+    });
+    it("should return true, if it's not an update, and the userID is among receivers", () => {
+      // act
+      const result = ChatResolver.messagesFilter({
+        context: context,
+        payload: {message: mockMessage, receivers: ['blabl', 'yohoo', userID]},
+      } as ResolverFilterData<MessageSubscriptionPayload, any, Context>);
+      // assert
+      expect(result).toBe(true);
+    });
+  });
+  it('should return the message', () => {
+    // arrange
+    const payload = {
+      message: mockMessage,
+      update: true,
+      receivers: ['blabl', 'yohoo', userID]
+    };
+    // act
+    const result = resolver.messages(payload);
+    // assert
+    expect(result).toStrictEqual({message: mockMessage, update: true});
   });
 });

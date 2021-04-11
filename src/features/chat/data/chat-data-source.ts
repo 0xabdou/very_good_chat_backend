@@ -145,7 +145,7 @@ export default class ChatDataSource {
         include: {message: {include: {deliveries: true, medias: true}}}
       });
     });
-    const results = await Promise.all(promises);
+    const results: FullPrismaDelivery[] = await Promise.all(promises);
     return results.map(d => ChatDataSource._getMessage(d.message));
   }
 
@@ -161,21 +161,19 @@ export default class ChatDataSource {
             senderID: {not: userID},
             deliveries: {none: {userID, type: PrismaDeliveryType.SEEN}}
           },
-          orderBy: {sentAt: 'asc'}
         }
       }
     });
-    const messagesIDs: number[] = result.reduce((ids: number[], conv) => {
-      return [...ids, ...conv.messages.map(m => m.id)];
-    }, []);
+    const messagesIDs: number[] = result[0].messages.map(m => m.id);
     if (!messagesIDs.length) return [];
+    const date = new Date();
     const promises = messagesIDs.map(messageID => {
       return this._prisma.delivery.create({
         data: {
           userID,
           messageID,
           type: PrismaDeliveryType.SEEN,
-          date: new Date()
+          date
         },
         include: {message: {include: {deliveries: true, medias: true}}}
       });
@@ -253,4 +251,8 @@ export type FullPrismaConversation = PrismaConversation & {
 export type FullPrismaMessage = PrismaMessage & {
   medias: PrismaMedia[]
   deliveries: PrismaDelivery[],
+}
+
+export type FullPrismaDelivery = PrismaDelivery & {
+  message: FullPrismaMessage
 }

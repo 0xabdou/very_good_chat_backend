@@ -107,6 +107,17 @@ export default class ChatResolver {
     return sentMessage;
   }
 
+  static messagesFilter(
+    data: ResolverFilterData<MessageSubscriptionPayload, any, Context>
+  ): boolean {
+    const {context, payload} = data;
+    const userID = context.connection?.context.userID;
+    if (payload.update) return payload.message.senderID == userID;
+    return (payload.message.senderID != userID
+      && !!payload.receivers
+      && payload.receivers.indexOf(userID) != -1);
+  }
+
   @Mutation(() => Int)
   @UseMiddleware(isAuthenticated)
   async messagesDelivered(
@@ -117,7 +128,7 @@ export default class ChatResolver {
     const result = await context.toolBox.dataSources.chatDS.messagesDelivered(
       conversationIDs, context.userID!
     );
-    result.map(message => publish({message, update: true, receivers: []}));
+    result.map(message => publish({message, update: true}));
     return result.length;
   }
 
@@ -131,19 +142,13 @@ export default class ChatResolver {
     const result = await context.toolBox.dataSources.chatDS.messagesSeen(
       conversationID, context.userID!
     );
-    result.map(message => publish({message, update: true, receivers: []}));
+    result.map(message => publish({message, update: true}));
     return result.length;
   }
 
   @Subscription(() => MessageSub, {
     topics: 'MESSAGES',
-    filter: (data: ResolverFilterData<MessageSubscriptionPayload, any, Context>) => {
-      const {context, payload} = data;
-      const userID = context.connection?.context.userID;
-      if (payload.update) return payload.message.senderID == userID;
-      return payload.message.senderID != userID
-        && payload.receivers.indexOf(userID) != -1;
-    },
+    filter: ChatResolver.messagesFilter
   })
   messages(@Root() {message, update}: MessageSubscriptionPayload): MessageSub {
     return {message, update};
@@ -152,6 +157,6 @@ export default class ChatResolver {
 
 export type MessageSubscriptionPayload = {
   message: Message,
-  receivers: string[],
+  receivers?: string[],
   update?: boolean,
 }

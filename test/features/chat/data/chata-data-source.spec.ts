@@ -1,5 +1,6 @@
 import {
   ConversationType as PrismaConversationType,
+  DeliveryType as PrismaDeliveryType,
   Prisma,
   PrismaClient
 } from '@prisma/client';
@@ -14,17 +15,19 @@ import {
 } from "ts-mockito";
 import ChatDataSource, {
   FullPrismaConversation,
+  FullPrismaDelivery,
+  FullPrismaMessage,
   MinimalConversation,
   SendMessageArgs
 } from "../../../../src/features/chat/data/chat-data-source";
 import {
   mockConversation,
+  mockFullPrismaConversation,
+  mockFullPrismaMessage,
   mockMedia,
   mockMessage,
   mockPrismaAuthUser,
-  mockPrismaFullConversation,
   mockPrismaMedia,
-  mockPrismaMessage,
   mockPrismaUser,
   mockTheDate
 } from "../../../mock-objects";
@@ -38,6 +41,7 @@ import UserDataSource
 const MockPrismaClient = mock<PrismaClient>();
 const MockConversationDelegate = mock<Prisma.ConversationDelegate<any>>();
 const MockMessageDelegate = mock<Prisma.MessageDelegate<any>>();
+const MockDeliveryDelegate = mock<Prisma.DeliveryDelegate<any>>();
 const user1ID = 'user1IDDD';
 const user2ID = 'user2IDDD';
 const [spy, mockDate] = mockTheDate();
@@ -47,11 +51,13 @@ const chatDS = new ChatDataSource(instance(MockPrismaClient));
 beforeAll(() => {
   when(MockPrismaClient.conversation).thenReturn(instance(MockConversationDelegate));
   when(MockPrismaClient.message).thenReturn(instance(MockMessageDelegate));
+  when(MockPrismaClient.delivery).thenReturn(instance(MockDeliveryDelegate));
 });
 
 beforeEach(() => {
   reset(MockConversationDelegate);
   reset(MockMessageDelegate);
+  reset(MockDeliveryDelegate);
 });
 
 afterAll(() => {
@@ -61,7 +67,7 @@ afterAll(() => {
 describe('parsers', () => {
   const userID = 'userIIIIIDDDDDDD';
   const inputConversation: FullPrismaConversation = {
-    ...mockPrismaFullConversation,
+    ...mockFullPrismaConversation,
     participants: [
       {
         ...mockPrismaAuthUser,
@@ -96,7 +102,7 @@ describe('parsers', () => {
   });
   test('_getMessage', () => {
     // act
-    const result = ChatDataSource._getMessage(mockPrismaMessage);
+    const result = ChatDataSource._getMessage(mockFullPrismaMessage);
     // assert
     expect(result).toStrictEqual(mockMessage);
   });
@@ -127,11 +133,11 @@ describe('createOneToOneConversation', function () {
 
   test('should only return a conversation if it already exists', async () => {
     // arrange
-    when(MockConversationDelegate.findMany(anything())).thenResolve([mockPrismaFullConversation]);
+    when(MockConversationDelegate.findMany(anything())).thenResolve([mockFullPrismaConversation]);
     // act
     const result = await chatDS.findOrCreateOneToOneConversation(user1ID, user2ID);
     // expect
-    expect(result).toStrictEqual(ChatDataSource._getConversation(mockPrismaFullConversation, user1ID));
+    expect(result).toStrictEqual(ChatDataSource._getConversation(mockFullPrismaConversation, user1ID));
     verifyFindMany();
     verify(MockConversationDelegate.create(anything())).never();
   });
@@ -139,11 +145,11 @@ describe('createOneToOneConversation', function () {
   test("should create then return a conversation if it doesn't already exist", async () => {
     // arrange
     when(MockConversationDelegate.findMany(anything())).thenResolve([]);
-    when(MockConversationDelegate.create(anything())).thenResolve(mockPrismaFullConversation);
+    when(MockConversationDelegate.create(anything())).thenResolve(mockFullPrismaConversation);
     // act
     const result = await chatDS.findOrCreateOneToOneConversation(user1ID, user2ID);
     // expect
-    expect(result).toStrictEqual(ChatDataSource._getConversation(mockPrismaFullConversation, user1ID));
+    expect(result).toStrictEqual(ChatDataSource._getConversation(mockFullPrismaConversation, user1ID));
     verifyFindMany();
     verify(MockConversationDelegate.create(deepEqual({
       data: {
@@ -165,11 +171,11 @@ describe('createOneToOneConversation', function () {
 describe('getConversations', () => {
   it('should return a list of conversations', async () => {
     // arrange
-    when(MockConversationDelegate.findMany(anything())).thenResolve([mockPrismaFullConversation]);
+    when(MockConversationDelegate.findMany(anything())).thenResolve([mockFullPrismaConversation]);
     // act
     const result = await chatDS.getConversations(user1ID);
     // assert
-    expect(result).toStrictEqual([ChatDataSource._getConversation(mockPrismaFullConversation, user1ID)]);
+    expect(result).toStrictEqual([ChatDataSource._getConversation(mockFullPrismaConversation, user1ID)]);
     verify(MockConversationDelegate.findMany(deepEqual({
       where: {participants: {some: {id: user1ID}}},
       include: {
@@ -193,11 +199,11 @@ describe('sendMessage', () => {
       text: 'Hello world',
       medias: [mockMedia, mockMedia]
     };
-    when(MockMessageDelegate.create(anything())).thenResolve(mockPrismaMessage);
+    when(MockMessageDelegate.create(anything())).thenResolve(mockFullPrismaMessage);
     // act
     const result = await chatDS.sendMessage(args);
     // assert
-    expect(result).toStrictEqual(ChatDataSource._getMessage(mockPrismaMessage));
+    expect(result).toStrictEqual(ChatDataSource._getMessage(mockFullPrismaMessage));
     verify(MockMessageDelegate.create(deepEqual({
       data: {
         conversationID: args.conversationID,
@@ -220,11 +226,11 @@ describe('getMinimalConversation', () => {
     'should return a minimal conversation that has a participant with the senderID if it exists',
     async () => {
       // arrange
-      when(MockConversationDelegate.findMany(anything())).thenResolve([mockPrismaFullConversation]);
+      when(MockConversationDelegate.findMany(anything())).thenResolve([mockFullPrismaConversation]);
       const expected: MinimalConversation = {
-        id: mockPrismaFullConversation.id,
-        type: ConversationType[mockPrismaFullConversation.type],
-        participantsIDs: mockPrismaFullConversation.participants.map(p => p.id)
+        id: mockFullPrismaConversation.id,
+        type: ConversationType[mockFullPrismaConversation.type],
+        participantsIDs: mockFullPrismaConversation.participants.map(p => p.id)
       };
       // act
       const result = await chatDS.getMinimalConversation(conversationID, senderID);
@@ -252,4 +258,106 @@ describe('getMinimalConversation', () => {
       }))).once();
     }
   );
+});
+
+describe('messages(Delivered/Seen)', () => {
+  const mIDs = [123123, 234235];
+  const messages: FullPrismaMessage[] = mIDs.map(id => ({
+    ...mockFullPrismaMessage, id,
+  }));
+  const deliveries: FullPrismaDelivery[] = messages.map(message => ({
+    userID: 'zblbola',
+    messageID: message.id,
+    type: PrismaDeliveryType.DELIVERED,
+    date: new Date(),
+    message,
+  }));
+  const userID = 'zblbolaaaa';
+
+  it('Delivered', async () => {
+    // arrange
+    const cIDs = [12312424, 234235235];
+    const convs: FullPrismaConversation[] = messages.map((message, idx) => ({
+      ...mockFullPrismaConversation,
+      id: cIDs[idx],
+      messages: [message]
+    }));
+    when(MockConversationDelegate.findMany(anything())).thenResolve(convs);
+    let i = 0;
+    const getDelivery = () => deliveries[i++];
+    when(MockDeliveryDelegate.create(anything())).thenCall(getDelivery);
+    // act
+    const result = await chatDS.messagesDelivered(cIDs, userID);
+    // assert
+    expect(result).toStrictEqual(messages.map(ChatDataSource._getMessage));
+    verify(MockConversationDelegate.findMany(deepEqual({
+      where: {
+        id: {in: cIDs},
+        participants: {some: {id: userID}}
+      },
+      include: {
+        messages: {
+          where: {
+            senderID: {not: userID},
+            deliveries: {
+              none: {userID, type: PrismaDeliveryType.DELIVERED}
+            }
+          }
+        }
+      }
+    }))).once();
+    mIDs.forEach(id => {
+      verify(MockDeliveryDelegate.create(deepEqual({
+        data: {
+          userID: userID,
+          messageID: id,
+          type: PrismaDeliveryType.DELIVERED
+        },
+        include: {message: {include: {deliveries: true, medias: true}}}
+      }))).once();
+    });
+  });
+
+  it('Seen', async () => {
+    // arrange
+    const cID = 12441221;
+    const conv: FullPrismaConversation = {
+      ...mockFullPrismaConversation,
+      id: cID,
+      messages,
+    };
+    when(MockConversationDelegate.findMany(anything())).thenResolve([conv]);
+    let i = 0;
+    const getDelivery = () => deliveries[i++];
+    when(MockDeliveryDelegate.create(anything())).thenCall(getDelivery);
+    // act
+    const result = await chatDS.messagesSeen(cID, userID);
+    // assert
+    expect(result).toStrictEqual(messages.map(ChatDataSource._getMessage));
+    verify(MockConversationDelegate.findMany(deepEqual({
+      where: {
+        id: cID,
+        participants: {some: {id: userID}}
+      },
+      include: {
+        messages: {
+          where: {
+            senderID: {not: userID},
+            deliveries: {none: {userID, type: PrismaDeliveryType.SEEN}}
+          },
+        }
+      }
+    }))).once();
+    mIDs.forEach(id => {
+      verify(MockDeliveryDelegate.create(deepEqual({
+        data: {
+          userID: userID,
+          messageID: id,
+          type: PrismaDeliveryType.SEEN,
+          date: mockDate
+        },
+        include: {message: {include: {deliveries: true, medias: true}}}
+      }))).once();
+    });
+  });
 });
