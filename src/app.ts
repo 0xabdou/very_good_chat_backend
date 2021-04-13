@@ -26,7 +26,7 @@ const createApp = async (toolBox: ToolBox): Promise<[ApolloServer, Express]> => 
 
   app.use(express.static(path.join(__dirname, '../storage')));
   app.use(cookieParser(process.env.COOKIE_SECRET));
-  app.use(graphqlUploadExpress({maxFileSize: 10000000, maxFiles: 10}));
+  app.use(graphqlUploadExpress({maxFileSize: 25000000, maxFiles: 10}));
   // Token related auth stuff are not handled by this express middleware
   app.use('/auth', CORS, authRouter(container.get(TYPES.Tokens)));
 
@@ -48,15 +48,11 @@ const createApp = async (toolBox: ToolBox): Promise<[ApolloServer, Express]> => 
     schema,
     uploads: false,
     subscriptions: {
-      onConnect: (connectionParams: any, webSocket, context) => {
-        console.log('Connected!');
+      onConnect: (connectionParams: any) => {
         const accessToken = connectionParams.accessToken;
         const tokens = container.get<Tokens>(TYPES.Tokens);
         const userID = tokens.verifyAccessToken(accessToken);
         return {userID};
-      },
-      onDisconnect: (webSocket, context) => {
-        console.log('Disconnected!');
       },
       path: '/subscriptions'
     },

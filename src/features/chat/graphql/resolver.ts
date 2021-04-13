@@ -16,7 +16,6 @@ import Context from "../../../shared/context";
 import {
   Conversation,
   Media,
-  MediaType,
   Message,
   MessageSub,
   SendMessageInput
@@ -74,28 +73,11 @@ export default class ChatResolver {
     }
     let medias: Media[] | undefined;
     if (hasMedia) {
-      const tempURLs = await Promise.all(input.medias!.map(
-        media => context.toolBox.utils.file.saveTempFile(media)
-      ));
-      const types: MediaType[] = [];
-      const urlsToUpload: Promise<string>[] = [];
-      for (let url of tempURLs) {
-        types.push(context.toolBox.utils.file.getMediaType(url));
-        urlsToUpload.push(
-          context.toolBox.dataSources.uploader.uploadConversationMedia({
-            mediaPath: url,
-            conversationID: input.conversationID
-          })
-        );
-      }
-      const uploadedURLs = await Promise.all(urlsToUpload);
-      medias = [];
-      for (let i in uploadedURLs) {
-        medias.push({
-          url: uploadedURLs[i],
-          type: types[i]
-        });
-      }
+      const promises = input.medias!.map(file =>
+        context.toolBox.utils.file
+          .saveConversationMedia(file, input.conversationID)
+      );
+      medias = await Promise.all(promises);
     }
     const sentMessage = await chatDS.sendMessage({
       conversationID: input.conversationID,

@@ -1,10 +1,10 @@
 import {FileUpload} from "graphql-upload";
-import {createWriteStream, unlinkSync} from "fs";
-import {dirname, join} from 'path';
+import {createWriteStream} from "fs";
+import {join} from 'path';
 import {injectable} from "inversify";
 import sharp from 'sharp';
 import {v4} from 'uuid';
-import {MediaType} from "../../features/chat/graphql/types";
+import {Media, MediaType} from "../../features/chat/graphql/types";
 import fs from 'fs-extra';
 
 @injectable()
@@ -18,27 +18,26 @@ export default class FileUtils {
     this._storageDir = storageDir;
   }
 
-  static isImage(ext: string) {
-    const exts = ['png', 'jpg', 'jpeg'];
-    return exts.indexOf(ext) != -1;
+  async saveUpload(file: Promise<FileUpload>, path: string) {
+    const {createReadStream} = await file;
+    return new Promise<void>((resolve, reject) => {
+      const writeableStream = createWriteStream(path, {autoClose: true});
+      createReadStream()
+        .on('error', reject)
+        .pipe(writeableStream)
+        .on('finish', resolve);
+    });
   }
 
   async saveAvatar(file: Promise<FileUpload>, userID: string): Promise<ResizedPhotos> {
-    const {createReadStream, mimetype} = await file;
-    const ext = mimetype.split('/')[1];
-    if (!FileUtils.isImage(ext)) throw new Error('The avatar should be an image');
+    const {mimetype} = await file;
+    const [type, ext] = mimetype.split('/');
+    if (type != 'image') throw new Error('The avatar should be an image');
     const name = v4();
     const dirPath = `${this._storageDir}/avatars/${userID}`;
     await fs.ensureDir(dirPath);
     const sourceAvatarPath = `${dirPath}/${name}.${ext}`;
-    const writeableStream = createWriteStream(sourceAvatarPath, {autoClose: true});
-    const saved = await new Promise<boolean>(resolve => {
-      createReadStream()
-        .pipe(writeableStream)
-        .on('finish', () => resolve(true))
-        .on('error', () => resolve(false));
-    });
-    if (!saved) throw new Error("Could not save file");
+    await this.saveUpload(file, sourceAvatarPath);
     const sizes = [150, 48];
     const promises = sizes.map(async size => {
       const thumbName = `${name}_x${size}.${ext}`;
@@ -55,51 +54,53 @@ export default class FileUtils {
     };
   }
 
-  getMediaType(url: string): MediaType {
-    const imageExt = ['png', 'jpg', 'jpeg'];
-    const ext = url.split('.')[-1];
-    if (imageExt.indexOf(ext) != -1) return MediaType.IMAGE;
-    if (ext == 'mp4') return MediaType.VIDEO;
-    throw new Error('UNSUPPORTED_MEDIA_TYPE',);
-  }
-
-  async saveTempFile(file: Promise<FileUpload>): Promise<string> {
-    const {createReadStream, mimetype} = await file;
-    const ext = mimetype.split('/')[1];
-    const name = v4();
-    const filePath = `${this._storageDir}/${name}.${ext}`;
-    const writeableStream = createWriteStream(filePath, {autoClose: true});
-    const saved = await new Promise<boolean>(resolve => {
-      createReadStream()
-        .pipe(writeableStream)
-        .on('finish', () => resolve(true))
-        .on('error', () => resolve(false));
-    });
-    if (!saved) throw new Error("Could not save file");
-    return filePath;
-  }
-
-  async generateResizedPhotos(photoPath: string): Promise<ResizedPhotos> {
-    const fileName = photoPath.split('/').pop();
-    const workingDir = dirname(photoPath);
-    const sizes = [48, 150];
-
-    const promises = sizes.map(async size => {
-      const thumbName = `${size}_${fileName}`;
-      const thumbPath = join(workingDir, thumbName);
-      await sharp(photoPath).resize(size).toFile(thumbPath);
-      return thumbPath;
-    });
-    const paths = await Promise.all(promises);
+  async saveConversationMedia(file: Promise<FileUpload>, convID: number): Promise<Media> {
+    const {mimetype} = await file;
+    const [type, ext] = mimetype.split('/');
+    let mediaType: MediaType;
+    if (type == 'image') mediaType = MediaType.IMAGE;
+    else if (type == 'video') mediaType = MediaType.VIDEO;
+    else throw new Error(`Unsupported media type: ${type}`);
+    const uid = v4();
+    const sourceName = `${uid}.${ext}`;
+    const dirPath = `${this._storageDir}/conversations/${convID}`;
+    await fs.ensureDir(dirPath);
+    const sourceMediaPath = `${dirPath}/${sourceName}`;
+    await this.saveUpload(file, sourceMediaPath);
+    let thumbName: string | undefined;
+    if (mediaType == MediaType.IMAGE) {
+      const {width, height} = await sharp(sourceMediaPath).metadata();
+      const THRESHOLD = 500;
+      if (!height || !width) throw new Error("Couldn't get file metadata");
+      const ar = width / height;
+      let thumbWidth, thumbHeight: number | undefined;
+      if (width > height) {
+        if (width > THRESHOLD) {
+          thumbWidth = THRESHOLD;
+          thumbHeight = THRESHOLD / ar;
+        }
+      } else {
+        if (height > THRESHOLD) {
+          thumbHeight = THRESHOLD;
+          thumbWidth = THRESHOLD * ar;
+        }
+      }
+      if (thumbWidth && thumbHeight) {
+        thumbName = `${uid}_thumb.${ext}`;
+        const thumbPath = join(dirPath, thumbName);
+        await sharp(sourceMediaPath)
+          .resize({width: thumbWidth, height: thumbHeight})
+          .toFile(thumbPath);
+      } else {
+        thumbName = sourceName;
+      }
+    }
+    const prefix = `${this._serverUrl}/conversations/${convID}/`;
     return {
-      source: photoPath,
-      small: paths[0],
-      medium: paths[1]
-    } as ResizedPhotos;
-  }
-
-  async deleteTempFile(path: string) {
-    unlinkSync(path);
+      url: prefix + sourceName,
+      thumbUrl: thumbName ? prefix + thumbName : undefined,
+      type: mediaType
+    };
   }
 }
 

@@ -72,6 +72,9 @@ export class Media {
 
   @Field()
   url!: string;
+
+  @Field({nullable: true})
+  thumbUrl?: string;
 }
 
 export enum MediaType {

@@ -13,6 +13,7 @@ import ChatResolver, {MessageSubscriptionPayload} from "../../../../src/features
 import {
   Conversation,
   ConversationType,
+  Media,
   MediaType,
   Message,
   SendMessageInput
@@ -144,36 +145,23 @@ describe('sendMessage', () => {
     };
     when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(minCov);
     // stub temp file saving
-    const tempURLs = Array.from({length: input.medias!.length}, (_, i) => `temp_${i}`);
+    const medias: Media[] = Array.from({length: input.medias!.length}, (_, i) => {
+      return {url: `spoppah_${i}.jpeg`, type: MediaType.IMAGE};
+    });
     let i = 0;
-    const getTempURL = () => tempURLs[i++];
-    when(MockFileUtils.saveTempFile(anything())).thenCall(getTempURL);
-    // stub uploader
-    const uploadedURLs = Array.from({length: tempURLs.length}, (_, i) => `up_${i}`);
-    let j = 0;
-    const getUploadedURL = () => uploadedURLs[j++];
-    when(MockUploader.uploadConversationMedia(anything())).thenCall(getUploadedURL);
-    // stub media types
-    when(MockFileUtils.getMediaType(anything())).thenReturn(MediaType.IMAGE);
+    const getMedia = () => medias[i++];
+    when(MockFileUtils.saveConversationMedia(anything(), anything())).thenCall(getMedia);
     // stub message sending
     when(MockChatDS.sendMessage(anything())).thenResolve(mockMessage);
     // act
     const result = await resolver.sendMessage(context, input, instance(MockPublish).pub);
     // assert
     expect(result).toStrictEqual(mockMessage);
-    for (let upload of input.medias!)
-      verify(MockFileUtils.saveTempFile(upload)).once();
-    for (let url of tempURLs) {
-      verify(MockFileUtils.getMediaType(url)).once();
-    }
     verify(MockChatDS.sendMessage(deepEqual({
       conversationID: input.conversationID,
       senderID: userID,
       text: input.text,
-      medias: input.medias?.map((_, i) => ({
-        url: uploadedURLs[i],
-        type: MediaType.IMAGE
-      }))
+      medias,
     }))).once();
     verify(MockPublish.pub(deepEqual({
       message: mockMessage, receivers: minCov.participantsIDs

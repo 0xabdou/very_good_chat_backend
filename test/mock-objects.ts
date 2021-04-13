@@ -141,6 +141,7 @@ export const mockPrismaMedia: PrismaMedia = {
   messageID: messageId,
   type: PrismaMediaType.IMAGE,
   url: 'https://picsum.org/420x69',
+  thumbUrl: 'https://picsum.org/420x69',
 };
 
 export const mockFullPrismaMessage: FullPrismaMessage = {
@@ -182,7 +183,8 @@ export const mockFullPrismaConversation: FullPrismaConversation = {
 
 export const mockMedia: Media = {
   type: MediaType[mockPrismaMedia.type],
-  url: mockPrismaMedia.url
+  url: mockPrismaMedia.url,
+  thumbUrl: mockPrismaMedia.url ?? undefined,
 };
 
 export const mockMessage: Message = {

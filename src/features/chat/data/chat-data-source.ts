@@ -223,7 +223,8 @@ export default class ChatDataSource {
   static _getMedia(media: PrismaMedia): Media {
     return {
       type: MediaType[media.type],
-      url: media.url
+      url: media.url,
+      thumbUrl: media.thumbUrl ?? undefined,
     };
   }
 }

@@ -138,6 +138,7 @@ model Media {
     messageID   Int
     type        MediaType
     url         String
+    thumbUrl    String?
 
     @@map("medias")
 }
