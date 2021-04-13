@@ -195,7 +195,6 @@ describe('register', () => {
 describe('updateUser', () => {
   const usernameError = 'YEP';
   const nameError = 'NOP';
-  const photoURL = '/photo/url';
   const update: UserUpdate = {
     username: 'username',
     name: 'name name',
@@ -214,7 +213,6 @@ describe('updateUser', () => {
   beforeEach(() => {
     reset(MockUserValidators);
     when(MockUserDS.isUsernameTaken(anything())).thenResolve(false);
-    when(MockFileUtils.saveTempFile(anything())).thenResolve(photoURL);
     when(MockUserDS.updateUser(anything())).thenResolve(mockMe);
   });
 
