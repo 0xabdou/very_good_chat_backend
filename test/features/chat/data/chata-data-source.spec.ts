@@ -125,7 +125,8 @@ describe('createOneToOneConversation', function () {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {medias: true, deliveries: true}
+          include: {medias: true, deliveries: true},
+          take: 30,
         }
       }
     }))).once();
@@ -182,7 +183,8 @@ describe('getConversations', () => {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {medias: true, deliveries: true}
+          include: {medias: true, deliveries: true},
+          take: 30,
         }
       },
       orderBy: {updatedAt: 'desc'}

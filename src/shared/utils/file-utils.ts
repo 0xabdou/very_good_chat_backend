@@ -89,7 +89,10 @@ export default class FileUtils {
         thumbName = `${uid}_thumb.${ext}`;
         const thumbPath = join(dirPath, thumbName);
         await sharp(sourceMediaPath)
-          .resize({width: thumbWidth, height: thumbHeight})
+          .resize({
+            width: Math.floor(thumbWidth),
+            height: Math.floor(thumbHeight)
+          })
           .toFile(thumbPath);
       } else {
         thumbName = sourceName;

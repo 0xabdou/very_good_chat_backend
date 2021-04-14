@@ -43,6 +43,19 @@ export default class ChatResolver {
     return context.toolBox.dataSources.chatDS.getConversations(context.userID!);
   }
 
+  @Query(() => [Message])
+  @UseMiddleware(isAuthenticated)
+  async getMoreMessages(
+    @Ctx() context: Context,
+    @Arg('conversationID', () => Int) conversationID: number,
+    @Arg('messageID', () => Int) messageID: number
+  ): Promise<Message[]> {
+    const chatDS = context.toolBox.dataSources.chatDS;
+    const canGet = await chatDS.getMinimalConversation(conversationID, context.userID!);
+    if (!canGet) throw new ApolloError("Not a member of this conversation");
+    return chatDS.getMoreMessages(conversationID, messageID);
+  }
+
   @Mutation(() => Message)
   @UseMiddleware(isAuthenticated)
   async sendMessage(

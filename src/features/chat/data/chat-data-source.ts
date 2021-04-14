@@ -42,7 +42,8 @@ export default class ChatDataSource {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {medias: true, deliveries: true}
+          include: {medias: true, deliveries: true},
+          take: 30,
         }
       }
     });
@@ -73,12 +74,24 @@ export default class ChatDataSource {
         participants: {include: {user: true}},
         messages: {
           orderBy: {sentAt: 'desc'},
-          include: {medias: true, deliveries: true}
+          include: {medias: true, deliveries: true},
+          take: 30,
         }
       },
       orderBy: {updatedAt: 'desc'}
     });
     return conversations.map(c => ChatDataSource._getConversation(c, userID));
+  }
+
+  async getMoreMessages(conversationID: number, messageID: number) {
+    const messages = await this._prisma.message.findMany({
+      where: {conversationID},
+      orderBy: {sentAt: 'desc'},
+      cursor: {id: messageID},
+      take: 30,
+      include: {medias: true, deliveries: true}
+    });
+    return messages.reverse().map(ChatDataSource._getMessage);
   }
 
   async sendMessage(args: SendMessageArgs): Promise<Message> {
