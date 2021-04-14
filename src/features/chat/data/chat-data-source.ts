@@ -21,6 +21,8 @@ import {inject, injectable} from "inversify";
 import TYPES from "../../../service-locator/types";
 import UserDataSource from "../../user/data/user-data-source";
 
+export const MESSAGES_PER_FETCH = 30;
+
 @injectable()
 export default class ChatDataSource {
   private _prisma: PrismaClient;
@@ -43,7 +45,7 @@ export default class ChatDataSource {
         messages: {
           orderBy: {sentAt: 'desc'},
           include: {medias: true, deliveries: true},
-          take: 30,
+          take: MESSAGES_PER_FETCH,
         }
       }
     });
@@ -75,7 +77,7 @@ export default class ChatDataSource {
         messages: {
           orderBy: {sentAt: 'desc'},
           include: {medias: true, deliveries: true},
-          take: 30,
+          take: MESSAGES_PER_FETCH,
         }
       },
       orderBy: {updatedAt: 'desc'}
@@ -88,7 +90,7 @@ export default class ChatDataSource {
       where: {conversationID},
       orderBy: {sentAt: 'desc'},
       cursor: {id: messageID},
-      take: 30,
+      take: MESSAGES_PER_FETCH,
       include: {medias: true, deliveries: true}
     });
     return messages.reverse().map(ChatDataSource._getMessage);
