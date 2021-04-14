@@ -103,3 +103,15 @@ export class SendMessageInput {
   @Field(() => [GraphQLUpload], {nullable: true})
   medias?: Promise<FileUpload>[];
 }
+
+@ObjectType()
+export class Typing {
+  @Field()
+  conversationID!: number;
+
+  @Field()
+  userID!: string;
+
+  @Field()
+  date!: Date;
+}

@@ -18,7 +18,8 @@ import {
   Media,
   Message,
   MessageSub,
-  SendMessageInput
+  SendMessageInput,
+  Typing
 } from "./types";
 import isAuthenticated from "../../auth/graphql/is-authenticated";
 import {ApolloError, UserInputError} from "apollo-server-express";
@@ -54,6 +55,23 @@ export default class ChatResolver {
     const canGet = await chatDS.getMinimalConversation(conversationID, context.userID!);
     if (!canGet) throw new ApolloError("Not a member of this conversation");
     return chatDS.getMoreMessages(conversationID, messageID);
+  }
+
+  @Mutation(() => Typing)
+  @UseMiddleware(isAuthenticated)
+  async typing(
+    @Ctx() context: Context,
+    @PubSub("TYPINGS") publish: Publisher<TypingSubscriptionPayload>,
+    @Arg("conversationID") conversationID: number
+  ): Promise<Typing> {
+    const chatDS = context.toolBox.dataSources.chatDS;
+    const userID = context.userID!;
+    const canType = await chatDS.getMinimalConversation(conversationID, userID);
+    if (!canType) throw new ApolloError("Not a member of this conversation");
+    const typing = await chatDS.typing(conversationID, userID);
+    const receivers = canType.participantsIDs.filter(id => id != userID);
+    publish({typing, receivers});
+    return typing;
   }
 
   @Mutation(() => Message)
@@ -102,17 +120,6 @@ export default class ChatResolver {
     return sentMessage;
   }
 
-  static messagesFilter(
-    data: ResolverFilterData<MessageSubscriptionPayload, any, Context>
-  ): boolean {
-    const {context, payload} = data;
-    const userID = context.connection?.context.userID;
-    if (payload.update) return payload.message.senderID == userID;
-    return (payload.message.senderID != userID
-      && !!payload.receivers
-      && payload.receivers.indexOf(userID) != -1);
-  }
-
   @Mutation(() => Int)
   @UseMiddleware(isAuthenticated)
   async messagesDelivered(
@@ -148,10 +155,42 @@ export default class ChatResolver {
   messages(@Root() {message, update}: MessageSubscriptionPayload): MessageSub {
     return {message, update};
   }
+
+  @Subscription(() => MessageSub, {
+    topics: 'TYPINGS',
+    filter: ChatResolver.typingsFilter
+  })
+  typings(@Root() {typing}: TypingSubscriptionPayload): Typing {
+    return typing;
+  }
+
+  static messagesFilter(
+    data: ResolverFilterData<MessageSubscriptionPayload, any, Context>
+  ): boolean {
+    const {context, payload} = data;
+    const userID = context.connection?.context.userID;
+    if (payload.update) return payload.message.senderID == userID;
+    return (payload.message.senderID != userID
+      && !!payload.receivers
+      && payload.receivers.indexOf(userID) != -1);
+  }
+
+  static typingsFilter(
+    data: ResolverFilterData<TypingSubscriptionPayload, any, Context>
+  ): boolean {
+    const {context, payload} = data;
+    const userID = context.connection?.context.userID;
+    return payload.receivers.indexOf(userID) != -1;
+  }
 }
 
 export type MessageSubscriptionPayload = {
   message: Message,
   receivers?: string[],
   update?: boolean,
+}
+
+export type TypingSubscriptionPayload = {
+  typing: Typing,
+  receivers: string[],
 }

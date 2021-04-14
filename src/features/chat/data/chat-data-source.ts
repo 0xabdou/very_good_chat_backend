@@ -4,7 +4,8 @@ import {
   Delivery,
   Media,
   MediaType,
-  Message
+  Message,
+  Typing
 } from "../graphql/types";
 import {
   AuthUser as PrismaAuthUser,
@@ -94,6 +95,16 @@ export default class ChatDataSource {
       include: {medias: true, deliveries: true}
     });
     return messages.reverse().map(ChatDataSource._getMessage);
+  }
+
+  async typing(conversationID: number, userID: string): Promise<Typing> {
+    return this._prisma.typing.upsert({
+      where: {
+        conversationID_userID: {conversationID, userID}
+      },
+      create: {conversationID, userID, date: new Date()},
+      update: {date: new Date()},
+    });
   }
 
   async sendMessage(args: SendMessageArgs): Promise<Message> {

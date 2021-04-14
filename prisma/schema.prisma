@@ -22,6 +22,7 @@ model AuthUser {
     notificationFriend  Notification[] @relation(name: "notification_friend")
     conversations       Conversation[]
     deliveries          Delivery[]
+    typings             Typing[]
 
     @@map("auth_users")
 }
@@ -106,6 +107,7 @@ model Conversation {
     id              Int @id @default(autoincrement())
     participants    AuthUser[]
     messages        Message[]
+    typings         Typing[]
     type            ConversationType
     updatedAt       DateTime @updatedAt
     createdAt       DateTime @default(now())
@@ -163,4 +165,15 @@ model Delivery {
 enum DeliveryType {
     DELIVERED
     SEEN
+}
+
+model Typing {
+    conversation    Conversation @relation(fields:[conversationID], references:[id])
+    conversationID  Int
+    user            AuthUser @relation(fields:[userID], references:[id])
+    userID          String
+    date            DateTime
+
+    @@unique([conversationID, userID])
+    @@map("typings")
 }

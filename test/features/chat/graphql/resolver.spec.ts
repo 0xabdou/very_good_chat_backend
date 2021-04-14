@@ -9,7 +9,10 @@ import {
   when
 } from "ts-mockito";
 import ChatDataSource, {MinimalConversation} from "../../../../src/features/chat/data/chat-data-source";
-import ChatResolver, {MessageSubscriptionPayload} from "../../../../src/features/chat/graphql/resolver";
+import ChatResolver, {
+  MessageSubscriptionPayload,
+  TypingSubscriptionPayload
+} from "../../../../src/features/chat/graphql/resolver";
 import {
   Conversation,
   ConversationType,
@@ -18,7 +21,7 @@ import {
   Message,
   SendMessageInput
 } from "../../../../src/features/chat/graphql/types";
-import {mockConversation, mockMessage} from "../../../mock-objects";
+import {mockConversation, mockMessage, mockTyping} from "../../../mock-objects";
 import {ApolloError, UserInputError} from "apollo-server-express";
 import FileUtils from "../../../../src/shared/utils/file-utils";
 import {FileUpload} from "graphql-upload";
@@ -28,7 +31,8 @@ import {Publisher, ResolverFilterData} from "type-graphql";
 const MockChatDS = mock<ChatDataSource>();
 const MockFileUtils = mock<FileUtils>();
 const MockUploader = mock<IUploader>();
-const MockPublish = mock<{ pub: Publisher<MessageSubscriptionPayload> }>();
+const MockMessagePublish = mock<{ pub: Publisher<MessageSubscriptionPayload> }>();
+const MockTypingPublish = mock<{ pub: Publisher<TypingSubscriptionPayload> }>();
 const userID = 'userIDDDD';
 const context = {
   userID,
@@ -49,7 +53,8 @@ beforeEach(() => {
   reset(MockChatDS);
   reset(MockFileUtils);
   reset(MockUploader);
-  reset(MockPublish);
+  reset(MockMessagePublish);
+  reset(MockTypingPublish);
 });
 
 describe('getOrCreateOTOConversation', () => {
@@ -80,10 +85,105 @@ describe('getConversations', () => {
   });
 });
 
+describe("typing", () => {
+  const conversationID = 123123;
+
+  it("should throw an error if the user is not a member of the conversation", async () => {
+    // arrange
+    when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(null);
+    // act
+    let error: ApolloError | undefined;
+    try {
+      await resolver.typing(
+        context,
+        instance(MockTypingPublish).pub,
+        conversationID
+      );
+    } catch (e) {
+      error = e;
+    }
+    // assert
+    expect(error).not.toBeUndefined();
+    verify(MockChatDS.getMinimalConversation(conversationID, userID)).once();
+    verify(MockChatDS.typing(anything(), anything())).never();
+  });
+
+  it(
+    "should update typing, notify subscribers, and return th typing object otherwise",
+    async () => {
+      // arrange
+      const otherUserID = "zblbola";
+      const minConv: MinimalConversation = {
+        id: conversationID,
+        type: ConversationType.ONE_TO_ONE,
+        participantsIDs: [userID, otherUserID]
+      };
+      when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(minConv);
+      when(MockChatDS.typing(anything(), anything())).thenResolve(mockTyping);
+      // act
+      const result = await resolver.typing(
+        context,
+        instance(MockTypingPublish).pub,
+        conversationID
+      );
+      // assert
+      expect(result).toStrictEqual(mockTyping);
+      verify(MockTypingPublish.pub(deepEqual({
+        typing: mockTyping,
+        receivers: [otherUserID]
+      }))).once();
+    }
+  );
+});
+
+describe("typings", () => {
+  describe("typingsFilter", () => {
+    it("should return false if userID is not among receivers", () => {
+      // arrange
+      const context = {connection: {context: {userID}}} as Context;
+      const payload: TypingSubscriptionPayload = {
+        typing: mockTyping, receivers: ["zblbola", "tiwliwla"]
+      };
+      // act
+      const result = ChatResolver.typingsFilter({
+        context,
+        payload,
+      } as any);
+      // assert
+      expect(result).toBe(false);
+    });
+
+    it("should return true if userID is among receivers", () => {
+      // arrange
+      const context = {connection: {context: {userID}}} as Context;
+      const payload: TypingSubscriptionPayload = {
+        typing: mockTyping, receivers: ["zblbola", userID, "tiwliwla"]
+      };
+      // act
+      const result = ChatResolver.typingsFilter({
+        context,
+        payload,
+      } as any);
+      // assert
+      expect(result).toBe(true);
+    });
+  });
+  test("typings", () => {
+    // arrange
+    const payload: TypingSubscriptionPayload = {
+      typing: mockTyping, receivers: ["zblbola", userID, "tiwliwla"]
+    };
+    // act
+    const result = resolver.typings(payload);
+    // assert
+    expect(result).toStrictEqual(mockTyping);
+  });
+});
+
 describe('sendMessage', () => {
   const getThrownError = async (input: SendMessageInput) => {
     try {
-      await resolver.sendMessage(context, input, instance(MockPublish).pub);
+      await resolver.sendMessage(context, input, instance(MockMessagePublish).pub);
     } catch (e) {
       return e;
     }
@@ -154,7 +254,7 @@ describe('sendMessage', () => {
     // stub message sending
     when(MockChatDS.sendMessage(anything())).thenResolve(mockMessage);
     // act
-    const result = await resolver.sendMessage(context, input, instance(MockPublish).pub);
+    const result = await resolver.sendMessage(context, input, instance(MockMessagePublish).pub);
     // assert
     expect(result).toStrictEqual(mockMessage);
     verify(MockChatDS.sendMessage(deepEqual({
@@ -163,7 +263,7 @@ describe('sendMessage', () => {
       text: input.text,
       medias,
     }))).once();
-    verify(MockPublish.pub(deepEqual({
+    verify(MockMessagePublish.pub(deepEqual({
       message: mockMessage, receivers: minCov.participantsIDs
     }))).once();
   });
@@ -179,11 +279,11 @@ describe('messages(Delivered/Seen)', () => {
     const cIDs = [1, 2];
     when(MockChatDS.messagesDelivered(anything(), anything())).thenResolve(messages);
     // act
-    const result = await resolver.messagesDelivered(context, instance(MockPublish).pub, cIDs);
+    const result = await resolver.messagesDelivered(context, instance(MockMessagePublish).pub, cIDs);
     // assert
     expect(result).toStrictEqual(messages.length);
     verify(MockChatDS.messagesDelivered(cIDs, userID)).once();
-    messages.forEach(message => verify(MockPublish.pub(deepEqual({
+    messages.forEach(message => verify(MockMessagePublish.pub(deepEqual({
       message,
       update: true
     }))));
@@ -194,11 +294,11 @@ describe('messages(Delivered/Seen)', () => {
     const cID = 123123;
     when(MockChatDS.messagesSeen(anything(), anything())).thenResolve(messages);
     // act
-    const result = await resolver.messagesSeen(context, instance(MockPublish).pub, cID);
+    const result = await resolver.messagesSeen(context, instance(MockMessagePublish).pub, cID);
     // assert
     expect(result).toStrictEqual(messages.length);
     verify(MockChatDS.messagesSeen(cID, userID)).once();
-    messages.forEach(message => verify(MockPublish.pub(deepEqual({
+    messages.forEach(message => verify(MockMessagePublish.pub(deepEqual({
       message,
       update: true
     }))));

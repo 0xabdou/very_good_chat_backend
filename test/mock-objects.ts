@@ -29,7 +29,8 @@ import {
   ConversationType,
   Media,
   MediaType,
-  Message
+  Message,
+  Typing
 } from "../src/features/chat/graphql/types";
 
 export const mockPrismaAuthUser: PrismaAuthUser = {
@@ -207,6 +208,12 @@ export const mockConversation: Conversation = {
   type: ConversationType[mockFullPrismaConversation.type],
   participants: [mockGraphQLUser],
   messages: [mockMessage]
+};
+
+export const mockTyping: Typing = {
+  conversationID: mockConversation.id,
+  userID: mockPrismaUser.authUserID,
+  date: new Date()
 };
 
 export const mockTheDate = (): [jest.SpyInstance, Date] => {
