@@ -62,7 +62,7 @@ export default class ChatResolver {
   async typing(
     @Ctx() context: Context,
     @PubSub("TYPINGS") publish: Publisher<TypingSubscriptionPayload>,
-    @Arg("conversationID") conversationID: number
+    @Arg("conversationID", () => Int) conversationID: number
   ): Promise<Typing> {
     const chatDS = context.toolBox.dataSources.chatDS;
     const userID = context.userID!;
@@ -156,7 +156,7 @@ export default class ChatResolver {
     return {message, update};
   }
 
-  @Subscription(() => MessageSub, {
+  @Subscription(() => Typing, {
     topics: 'TYPINGS',
     filter: ChatResolver.typingsFilter
   })
