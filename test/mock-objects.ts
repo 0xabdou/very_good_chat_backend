@@ -213,7 +213,7 @@ export const mockConversation: Conversation = {
 export const mockTyping: Typing = {
   conversationID: mockConversation.id,
   userID: mockPrismaUser.authUserID,
-  date: new Date()
+  started: true,
 };
 
 export const mockTheDate = (): [jest.SpyInstance, Date] => {

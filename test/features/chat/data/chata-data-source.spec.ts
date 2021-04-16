@@ -29,8 +29,7 @@ import {
   mockPrismaAuthUser,
   mockPrismaMedia,
   mockPrismaUser,
-  mockTheDate,
-  mockTyping
+  mockTheDate
 } from "../../../mock-objects";
 import {
   Conversation,
@@ -43,7 +42,6 @@ const MockPrismaClient = mock<PrismaClient>();
 const MockConversationDelegate = mock<Prisma.ConversationDelegate<any>>();
 const MockMessageDelegate = mock<Prisma.MessageDelegate<any>>();
 const MockDeliveryDelegate = mock<Prisma.DeliveryDelegate<any>>();
-const MockTypingDelegate = mock<Prisma.TypingDelegate<any>>();
 const user1ID = 'user1IDDD';
 const user2ID = 'user2IDDD';
 const [spy, mockDate] = mockTheDate();
@@ -54,14 +52,12 @@ beforeAll(() => {
   when(MockPrismaClient.conversation).thenReturn(instance(MockConversationDelegate));
   when(MockPrismaClient.message).thenReturn(instance(MockMessageDelegate));
   when(MockPrismaClient.delivery).thenReturn(instance(MockDeliveryDelegate));
-  when(MockPrismaClient.typing).thenReturn(instance(MockTypingDelegate));
 });
 
 beforeEach(() => {
   reset(MockConversationDelegate);
   reset(MockMessageDelegate);
   reset(MockDeliveryDelegate);
-  reset(MockTypingDelegate);
 });
 
 afterAll(() => {
@@ -192,26 +188,6 @@ describe('getConversations', () => {
         }
       },
       orderBy: {updatedAt: 'desc'}
-    }))).once();
-  });
-});
-
-describe("typing", () => {
-  it("should do what it's supposed to do :)", async () => {
-    // arrange
-    const conversationID = 123123;
-    const userID = '134234';
-    when(MockTypingDelegate.upsert(anything())).thenResolve(mockTyping);
-    // act
-    const result = await chatDS.typing(conversationID, userID);
-    // assert
-    expect(result).toStrictEqual(mockTyping);
-    verify(MockTypingDelegate.upsert(deepEqual({
-      where: {
-        conversationID_userID: {conversationID, userID}
-      },
-      create: {conversationID, userID, date: new Date()},
-      update: {date: mockDate},
     }))).once();
   });
 });

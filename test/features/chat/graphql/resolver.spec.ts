@@ -19,7 +19,8 @@ import {
   Media,
   MediaType,
   Message,
-  SendMessageInput
+  SendMessageInput,
+  Typing
 } from "../../../../src/features/chat/graphql/types";
 import {mockConversation, mockMessage, mockTyping} from "../../../mock-objects";
 import {ApolloError, UserInputError} from "apollo-server-express";
@@ -87,6 +88,13 @@ describe('getConversations', () => {
 
 describe("typing", () => {
   const conversationID = 123123;
+  const started = true;
+
+  const act = () => resolver.typing(
+    context,
+    instance(MockTypingPublish).pub,
+    {conversationID, started}
+  );
 
   it("should throw an error if the user is not a member of the conversation", async () => {
     // arrange
@@ -94,22 +102,18 @@ describe("typing", () => {
     // act
     let error: ApolloError | undefined;
     try {
-      await resolver.typing(
-        context,
-        instance(MockTypingPublish).pub,
-        conversationID
-      );
+      await act();
     } catch (e) {
       error = e;
     }
     // assert
     expect(error).not.toBeUndefined();
     verify(MockChatDS.getMinimalConversation(conversationID, userID)).once();
-    verify(MockChatDS.typing(anything(), anything())).never();
+    verify(MockTypingPublish.pub(anything())).never();
   });
 
   it(
-    "should update typing, notify subscribers, and return th typing object otherwise",
+    "should notify subscribers, and return the typing object otherwise",
     async () => {
       // arrange
       const otherUserID = "zblbola";
@@ -119,17 +123,17 @@ describe("typing", () => {
         participantsIDs: [userID, otherUserID]
       };
       when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(minConv);
-      when(MockChatDS.typing(anything(), anything())).thenResolve(mockTyping);
+      const expected: Typing = {
+        conversationID,
+        userID,
+        started: true
+      };
       // act
-      const result = await resolver.typing(
-        context,
-        instance(MockTypingPublish).pub,
-        conversationID
-      );
+      const result = await act();
       // assert
-      expect(result).toStrictEqual(mockTyping);
+      expect(result).toStrictEqual(expected);
       verify(MockTypingPublish.pub(deepEqual({
-        typing: mockTyping,
+        typing: expected,
         receivers: [otherUserID]
       }))).once();
     }

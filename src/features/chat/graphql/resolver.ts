@@ -19,7 +19,8 @@ import {
   Message,
   MessageSub,
   SendMessageInput,
-  Typing
+  Typing,
+  TypingInput
 } from "./types";
 import isAuthenticated from "../../auth/graphql/is-authenticated";
 import {ApolloError, UserInputError} from "apollo-server-express";
@@ -62,14 +63,14 @@ export default class ChatResolver {
   async typing(
     @Ctx() context: Context,
     @PubSub("TYPINGS") publish: Publisher<TypingSubscriptionPayload>,
-    @Arg("conversationID", () => Int) conversationID: number
+    @Arg("typing") {conversationID, started}: TypingInput,
   ): Promise<Typing> {
     const chatDS = context.toolBox.dataSources.chatDS;
     const userID = context.userID!;
     const canType = await chatDS.getMinimalConversation(conversationID, userID);
     if (!canType) throw new ApolloError("Not a member of this conversation");
-    const typing = await chatDS.typing(conversationID, userID);
     const receivers = canType.participantsIDs.filter(id => id != userID);
+    const typing: Typing = {conversationID, userID, started};
     publish({typing, receivers});
     return typing;
   }

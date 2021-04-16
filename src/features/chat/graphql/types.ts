@@ -104,6 +104,15 @@ export class SendMessageInput {
   medias?: Promise<FileUpload>[];
 }
 
+@InputType()
+export class TypingInput {
+  @Field(() => Int)
+  conversationID!: number;
+
+  @Field()
+  started!: boolean;
+}
+
 @ObjectType()
 export class Typing {
   @Field()
@@ -113,5 +122,5 @@ export class Typing {
   userID!: string;
 
   @Field()
-  date!: Date;
+  started!: boolean;
 }
