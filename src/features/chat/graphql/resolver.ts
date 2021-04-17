@@ -55,7 +55,7 @@ export default class ChatResolver {
     const chatDS = context.toolBox.dataSources.chatDS;
     const canGet = await chatDS.getMinimalConversation(conversationID, context.userID!);
     if (!canGet) throw new ApolloError("Not a member of this conversation");
-    return chatDS.getMoreMessages(conversationID, messageID);
+    return chatDS.getMoreMessages(conversationID, messageID - 1);
   }
 
   @Mutation(() => Typing)
