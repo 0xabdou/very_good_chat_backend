@@ -21,6 +21,9 @@ export class Conversation {
 
   @Field(() => [Message])
   messages!: Message[];
+
+  @Field()
+  canChat!: boolean;
 }
 
 export enum ConversationType {

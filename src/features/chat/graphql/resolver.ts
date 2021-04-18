@@ -15,6 +15,7 @@ import {
 import Context from "../../../shared/context";
 import {
   Conversation,
+  ConversationType,
   Media,
   Message,
   MessageSub,
@@ -30,19 +31,35 @@ export default class ChatResolver {
 
   @Mutation(() => Conversation)
   @UseMiddleware(isAuthenticated)
-  getOrCreateOneToOneConversation(
+  async getOrCreateOneToOneConversation(
     @Ctx() context: Context,
     @Arg("userID") userID: string,
-  ) {
-    return context.toolBox.dataSources.chatDS.findOrCreateOneToOneConversation(
-      context.userID!, userID
-    );
+  ): Promise<Conversation> {
+    const conversation = await context.toolBox.dataSources.chatDS
+      .findOrCreateOneToOneConversation(context.userID!, userID);
+    if (conversation.type == ConversationType.ONE_TO_ONE) {
+      const block = await context.toolBox.dataSources.blockDS.getBlockStatus(
+        context.userID!, conversation.participants[0].id
+      );
+      if (block) conversation.canChat = false;
+    }
+    return conversation;
   }
 
   @Query(() => [Conversation])
   @UseMiddleware(isAuthenticated)
-  getConversations(@Ctx() context: Context) {
-    return context.toolBox.dataSources.chatDS.getConversations(context.userID!);
+  async getConversations(@Ctx() context: Context): Promise<Conversation[]> {
+    const conversations = await context.toolBox.dataSources.chatDS
+      .getConversations(context.userID!);
+    const promises = conversations.map(async c => {
+      if (c.type == ConversationType.GROUP) return undefined;
+      return context.toolBox.dataSources.blockDS.getBlockStatus(
+        context.userID!, c.participants[0].id
+      );
+    });
+    const blocks = await Promise.all(promises);
+    blocks.forEach((block, index) => conversations[index].canChat = !block);
+    return conversations;
   }
 
   @Query(() => [Message])
@@ -102,6 +119,14 @@ export default class ChatResolver {
         "You can't send a message in the conversation",
         "MESSAGE_CANNOT_BE_SENT"
       );
+    }
+    if (canBeSent.type == ConversationType.ONE_TO_ONE) {
+      const receiverID = canBeSent.participantsIDs[0] == senderID ?
+        canBeSent.participantsIDs[1] : canBeSent.participantsIDs[0];
+      const block = await context.toolBox.dataSources.blockDS.getBlockStatus(
+        senderID, receiverID
+      );
+      if (block) throw new ApolloError("Can't send a message", block.toUpperCase());
     }
     let medias: Media[] | undefined;
     if (hasMedia) {

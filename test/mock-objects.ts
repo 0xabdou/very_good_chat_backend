@@ -207,7 +207,8 @@ export const mockConversation: Conversation = {
   id: mockFullPrismaConversation.id,
   type: ConversationType[mockFullPrismaConversation.type],
   participants: [mockGraphQLUser],
-  messages: [mockMessage]
+  messages: [mockMessage],
+  canChat: true,
 };
 
 export const mockTyping: Typing = {

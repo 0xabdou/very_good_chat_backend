@@ -22,14 +22,22 @@ import {
   SendMessageInput,
   Typing
 } from "../../../../src/features/chat/graphql/types";
-import {mockConversation, mockMessage, mockTyping} from "../../../mock-objects";
+import {
+  mockConversation,
+  mockGraphQLUser,
+  mockMessage,
+  mockTyping
+} from "../../../mock-objects";
 import {ApolloError, UserInputError} from "apollo-server-express";
 import FileUtils from "../../../../src/shared/utils/file-utils";
 import {FileUpload} from "graphql-upload";
 import {IUploader} from "../../../../src/shared/apis/uploader";
 import {Publisher, ResolverFilterData} from "type-graphql";
+import BlockDataSource
+  from "../../../../src/features/block/data/block-data-source";
 
 const MockChatDS = mock<ChatDataSource>();
+const MockBlockDS = mock<BlockDataSource>();
 const MockFileUtils = mock<FileUtils>();
 const MockUploader = mock<IUploader>();
 const MockMessagePublish = mock<{ pub: Publisher<MessageSubscriptionPayload> }>();
@@ -40,7 +48,8 @@ const context = {
   toolBox: {
     dataSources: {
       chatDS: instance(MockChatDS),
-      uploader: instance(MockUploader)
+      blockDS: instance(MockBlockDS),
+      uploader: instance(MockUploader),
     },
     utils: {
       file: instance(MockFileUtils)
@@ -56,34 +65,95 @@ beforeEach(() => {
   reset(MockUploader);
   reset(MockMessagePublish);
   reset(MockTypingPublish);
+  reset(MockBlockDS);
 });
 
 describe('getOrCreateOTOConversation', () => {
-  it('should forward the call to chatDS', () => {
-    // arrange
-    const otherUserID = 'otherUserIDDDD';
-    const promise = new Promise<Conversation>(r => r(mockConversation));
-    when(MockChatDS.findOrCreateOneToOneConversation(anything(), anything()))
-      .thenReturn(promise);
-    // act
-    const result = resolver.getOrCreateOneToOneConversation(context, otherUserID);
-    // assert
-    expect(result).toBe(promise);
-    verify(MockChatDS.findOrCreateOneToOneConversation(userID, otherUserID)).once();
-  });
+  const otherUserID = mockConversation.participants[0].id;
+  it(
+    'The returned conversation should have canChat set to true if there is no block',
+    async () => {
+      // arrange
+      when(MockChatDS.findOrCreateOneToOneConversation(anything(), anything()))
+        .thenResolve(mockConversation);
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve(undefined);
+      // act
+      const result = await resolver.getOrCreateOneToOneConversation(context, otherUserID);
+      // assert
+      expect(result).toStrictEqual(mockConversation);
+      verify(MockChatDS.findOrCreateOneToOneConversation(userID, otherUserID)).once();
+      verify(MockBlockDS.getBlockStatus(userID, otherUserID)).once();
+    }
+  );
+
+  it(
+    'The returned conversation should have canChat set to true if there is a block',
+    async () => {
+      // arrange
+      when(MockChatDS.findOrCreateOneToOneConversation(anything(), anything()))
+        .thenResolve(mockConversation);
+      when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve("blocked");
+      // act
+      const result = await resolver.getOrCreateOneToOneConversation(context, otherUserID);
+      // assert
+      expect(result).toStrictEqual({...mockConversation, canChat: false});
+      verify(MockChatDS.findOrCreateOneToOneConversation(userID, otherUserID)).once();
+      verify(MockBlockDS.getBlockStatus(userID, otherUserID)).once();
+    }
+  );
 });
 
 describe('getConversations', () => {
-  it('should forward the call to chatDS', () => {
-    // arrange
-    const promise = new Promise<Conversation[]>(r => r([]));
-    when(MockChatDS.getConversations(anything())).thenReturn(promise);
-    // act
-    const result = resolver.getConversations(context);
-    // assert
-    expect(result).toBe(promise);
-    verify(MockChatDS.getConversations(userID)).once();
-  });
+  it(
+    'the returned conversations should have the canChat field set accordingly',
+    async () => {
+      // arrange
+      const otherUserID1 = "ALDJALSJ23";
+      const otherUserID2 = "KDJSAKJD32894";
+      const otherUserID3 = "KDJSAKJD32342342894";
+      const otherUserID4 = "HABAKSOI:DJLAS()";
+      const convs: Conversation[] = [
+        {
+          ...mockConversation,
+          type: ConversationType.ONE_TO_ONE,
+          participants: [{...mockGraphQLUser, id: otherUserID1}]
+        },
+        {
+          ...mockConversation,
+          type: ConversationType.GROUP,
+          participants: [{...mockGraphQLUser, id: otherUserID2}]
+        },
+        {
+          ...mockConversation,
+          type: ConversationType.ONE_TO_ONE,
+          participants: [{...mockGraphQLUser, id: otherUserID3}]
+        },
+        {
+          ...mockConversation,
+          type: ConversationType.ONE_TO_ONE,
+          participants: [{...mockGraphQLUser, id: otherUserID4}]
+        }
+      ];
+      when(MockChatDS.getConversations(anything())).thenResolve(convs);
+      when(MockBlockDS.getBlockStatus(userID, otherUserID1)).thenResolve("blocking");
+      when(MockBlockDS.getBlockStatus(userID, otherUserID3)).thenResolve("blocked");
+      when(MockBlockDS.getBlockStatus(userID, otherUserID4)).thenResolve(undefined);
+      // act
+      const result = await resolver.getConversations(context);
+      // assert
+      expect(result).toStrictEqual([
+        {...convs[0], canChat: false},
+        convs[1],
+        {...convs[2], canChat: false},
+        convs[3],
+      ]);
+      verify(MockChatDS.getConversations(userID)).once();
+      verify(MockBlockDS.getBlockStatus(userID, otherUserID1)).once();
+      verify(MockBlockDS.getBlockStatus(userID, otherUserID2)).never();
+      verify(MockBlockDS.getBlockStatus(userID, otherUserID3)).once();
+      verify(MockBlockDS.getBlockStatus(userID, otherUserID4)).once();
+    }
+  );
 });
 
 describe("typing", () => {
@@ -229,25 +299,67 @@ describe('sendMessage', () => {
     medias: Array.from({length: 10}, () => ({}) as Promise<FileUpload>)
   };
 
-  it('should throw an error if the message cannot be sent', async () => {
-    // arrange
-    when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(null);
-    // act
-    const error = await getThrownError(input) as ApolloError;
-    // assert
-    expect(error.extensions.code).toBe('MESSAGE_CANNOT_BE_SENT');
-    verify(MockChatDS.getMinimalConversation(input.conversationID, userID)).once();
+  it(
+    'should throw an error if the sender is not a participant in the conversation',
+    async () => {
+      // arrange
+      when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(null);
+      // act
+      const error = await getThrownError(input) as ApolloError;
+      // assert
+      expect(error.extensions.code).toBe('MESSAGE_CANNOT_BE_SENT');
+      verify(MockChatDS.getMinimalConversation(input.conversationID, userID)).once();
+    }
+  );
+
+  const otherUserID = "ZBLBOLA";
+  const minCov: MinimalConversation = {
+    id: 11324,
+    type: ConversationType.ONE_TO_ONE,
+    participantsIDs: [userID, otherUserID]
+  };
+
+  describe("if the conversation is of type ONE_TO_ONE", () => {
+    it(
+      'should throw an error if the sender is blocking the receiver',
+      async () => {
+        // arrange
+        when(MockChatDS.getMinimalConversation(anything(), anything()))
+          .thenResolve(minCov);
+        when(MockBlockDS.getBlockStatus(anything(), anything()))
+          .thenResolve("blocking");
+        // act
+        const error = await getThrownError(input) as ApolloError;
+        // assert
+        expect(error.extensions.code).toBe("BLOCKING");
+        verify(MockChatDS.getMinimalConversation(input.conversationID, userID)).once();
+        verify(MockBlockDS.getBlockStatus(userID, otherUserID)).once();
+      }
+    );
+
+    it(
+      'should throw an error if the sender is blocked by the receiver',
+      async () => {
+        // arrange
+        when(MockChatDS.getMinimalConversation(anything(), anything()))
+          .thenResolve(minCov);
+        when(MockBlockDS.getBlockStatus(anything(), anything()))
+          .thenResolve("blocked");
+        // act
+        const error = await getThrownError(input) as ApolloError;
+        // assert
+        expect(error.extensions.code).toBe("BLOCKED");
+        verify(MockChatDS.getMinimalConversation(input.conversationID, userID)).once();
+        verify(MockBlockDS.getBlockStatus(userID, otherUserID)).once();
+      }
+    );
   });
 
   it('should send the message if all is good', async () => {
     // arrange
     // user can send message
-    const minCov: MinimalConversation = {
-      id: 11324,
-      type: ConversationType.ONE_TO_ONE,
-      participantsIDs: ['1313', '13123']
-    };
     when(MockChatDS.getMinimalConversation(anything(), anything())).thenResolve(minCov);
+    when(MockBlockDS.getBlockStatus(anything(), anything())).thenResolve(undefined);
     // stub temp file saving
     const medias: Media[] = Array.from({length: input.medias!.length}, (_, i) => {
       return {url: `spoppah_${i}.jpeg`, type: MediaType.IMAGE};

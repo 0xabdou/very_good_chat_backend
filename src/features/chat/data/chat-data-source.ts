@@ -207,6 +207,7 @@ export default class ChatDataSource {
       participants: conversation.participants.filter(p => p.id != currentUserID)
         .map(p => UserDataSource._getGraphQLUser(p.user!)),
       messages: conversation.messages.map(ChatDataSource._getMessage).reverse(),
+      canChat: true,
     };
   }
 
