@@ -196,8 +196,7 @@ export default class ChatResolver {
     const {context, payload} = data;
     const userID = context.connection?.context.userID;
     if (payload.update) return payload.message.senderID == userID;
-    return (payload.message.senderID != userID
-      && !!payload.receivers
+    return (!!payload.receivers
       && payload.receivers.indexOf(userID) != -1);
   }
 

@@ -102,7 +102,6 @@ export default class ChatDataSource {
         conversationID: args.conversationID,
         senderID: args.senderID,
         text: args.text ?? null,
-        sentAt: new Date(),
         medias: args.medias ? {
           create: args.medias,
         } : undefined

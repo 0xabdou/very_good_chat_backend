@@ -211,7 +211,6 @@ describe('sendMessage', () => {
         conversationID: args.conversationID,
         senderID: args.senderID,
         text: args.text,
-        sentAt: mockDate,
         medias: args.medias ? {
           create: args.medias,
         } : undefined
