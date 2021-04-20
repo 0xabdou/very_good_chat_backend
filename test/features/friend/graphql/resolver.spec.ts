@@ -210,18 +210,43 @@ describe('sendFriendRequest', () => {
 });
 
 describe('acceptFriendRequest', () => {
-  it('should accept the friend request and send a notification', async () => {
-    // arrange
-    when(MockFriendDS.acceptFriendRequest(anything(), anything()))
-      .thenResolve(mockFriendship);
-    // act
-    const result = await resolver.acceptFriendRequest(context, user2ID);
-    // assert
-    expect(result).toStrictEqual(mockFriendship);
-    verify(MockFriendDS.acceptFriendRequest(userID, user2ID)).once();
-    verify(MockNotificationDS.sendRequestAcceptedNotification(userID, user2ID))
-      .once();
-  });
+  it(
+    'should return the existing friendship and not send a any notification if it was already accepted',
+    async () => {
+      // arrange
+      const friendship = {status: FriendshipStatus.FRIENDS, date: new Date()};
+      when(MockFriendDS.getFriendship(anything(), anything())).thenResolve(friendship);
+      // act
+      const result = await resolver.acceptFriendRequest(context, user2ID);
+      // assert
+      expect(result).toStrictEqual(friendship);
+      verify(MockFriendDS.getFriendship(userID, user2ID)).once();
+      verify(MockFriendDS.acceptFriendRequest(anything(), anything())).never();
+      verify(MockNotificationDS.sendRequestAcceptedNotification(anything(), anything()))
+        .never();
+    },
+  );
+  it(
+    'should accept the friend request and send a notification if it was not already accepted',
+    async () => {
+      // arrange
+      const friendship = {
+        status: FriendshipStatus.REQUEST_RECEIVED,
+        date: new Date()
+      };
+      when(MockFriendDS.getFriendship(anything(), anything())).thenResolve(friendship);
+      when(MockFriendDS.acceptFriendRequest(anything(), anything()))
+        .thenResolve(mockFriendship);
+      // act
+      const result = await resolver.acceptFriendRequest(context, user2ID);
+      // assert
+      expect(result).toStrictEqual(mockFriendship);
+      verify(MockFriendDS.getFriendship(userID, user2ID)).once();
+      verify(MockFriendDS.acceptFriendRequest(userID, user2ID)).once();
+      verify(MockNotificationDS.sendRequestAcceptedNotification(userID, user2ID))
+        .once();
+    },
+  );
 });
 
 describe('declineFriendRequest', () => {

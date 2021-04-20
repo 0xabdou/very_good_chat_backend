@@ -172,11 +172,35 @@ describe('createOneToOneConversation', function () {
 describe('getConversations', () => {
   it('should return a list of conversations', async () => {
     // arrange
-    when(MockConversationDelegate.findMany(anything())).thenResolve([mockFullPrismaConversation]);
+    const convs: FullPrismaConversation[] = [
+      {
+        ...mockFullPrismaConversation,
+        messages: [
+          {
+            ...mockFullPrismaMessage,
+            sentAt: mockDate
+          }
+        ]
+      },
+      {
+        ...mockFullPrismaConversation,
+        messages: [
+          {
+            ...mockFullPrismaMessage,
+            sentAt: new Date(mockDate.getTime() + 100000)
+          }
+        ]
+      }
+    ];
+    const expected: Conversation[] = [
+      ChatDataSource._getConversation(convs[1], user1ID),
+      ChatDataSource._getConversation(convs[0], user1ID),
+    ];
+    when(MockConversationDelegate.findMany(anything())).thenResolve(convs);
     // act
     const result = await chatDS.getConversations(user1ID);
     // assert
-    expect(result).toStrictEqual([ChatDataSource._getConversation(mockFullPrismaConversation, user1ID)]);
+    expect(result).toStrictEqual(expected);
     verify(MockConversationDelegate.findMany(deepEqual({
       where: {participants: {some: {id: user1ID}}},
       include: {

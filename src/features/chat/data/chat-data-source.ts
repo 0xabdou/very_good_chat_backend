@@ -82,7 +82,15 @@ export default class ChatDataSource {
       },
       orderBy: {updatedAt: 'desc'}
     });
-    return conversations.map(c => ChatDataSource._getConversation(c, userID));
+    return conversations
+      .map(c => ChatDataSource._getConversation(c, userID))
+      .sort((c1, c2) => {
+        const lm1 = c1.messages[c1.messages.length - 1];
+        const lm2 = c2.messages[c2.messages.length - 1];
+        if (!lm1) return 1;
+        if (!lm2) return -1;
+        return lm2.sentAt.getTime() - lm1.sentAt.getTime();
+      });
   }
 
   async getMoreMessages(conversationID: number, messageID: number) {

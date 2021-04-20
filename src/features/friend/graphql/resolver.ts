@@ -83,6 +83,10 @@ export default class FriendResolver {
     @Ctx() context: Context,
     @Arg('userID') userID: string
   ): Promise<Friendship> {
+    const existing = await context.toolBox.dataSources.friendDS.getFriendship(
+      context.userID!, userID
+    );
+    if (existing.status == FriendshipStatus.FRIENDS) return existing;
     const friendship = await context.toolBox.dataSources.friendDS.acceptFriendRequest(
       context.userID!, userID
     );
