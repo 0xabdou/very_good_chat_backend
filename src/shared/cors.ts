@@ -21,6 +21,7 @@ const corsOptions: CorsOptions = {
       //// allow all for now
       //callback(null, true);
       //return;
+      console.log("REJECTED ORIGIN: ", origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
