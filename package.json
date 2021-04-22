@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --exec ts-node src/index.ts",
+    "start": "pm2 start ts-node -- -P tsconfig.server.json ./server/index.ts",
+    "dev": "nodemon --exec ts-node src/index.ts",
     "test": "jest --config jest.config.js"
   },
   "keywords": [],
