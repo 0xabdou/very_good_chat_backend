@@ -68,7 +68,7 @@ export default class FileUtils {
     const sourceMediaPath = `${dirPath}/${sourceName}`;
     await this.saveUpload(file, sourceMediaPath);
     let thumbName: string | undefined;
-    if (mediaType == MediaType.IMAGE && ext != 'gif') {
+    if (mediaType == MediaType.IMAGE && ext != "gif") {
       const {width, height} = await sharp(sourceMediaPath).metadata();
       const THRESHOLD = 500;
       if (!height || !width) throw new Error("Couldn't get file metadata");
@@ -95,6 +95,7 @@ export default class FileUtils {
           })
           .toFile(thumbPath);
       } else {
+        thumbName = sourceName;
       }
     } else if (ext == "gif") {
       thumbName = sourceName;
