@@ -95,8 +95,9 @@ export default class FileUtils {
           })
           .toFile(thumbPath);
       } else {
-        thumbName = sourceName;
       }
+    } else if (ext == "gif") {
+      thumbName = sourceName;
     }
     const prefix = `${this._serverUrl}/conversations/${convID}/`;
     return {
