@@ -31,7 +31,6 @@ import {
 import {ApolloError, UserInputError} from "apollo-server-express";
 import FileUtils from "../../../../src/shared/utils/file-utils";
 import {FileUpload} from "graphql-upload";
-import {IUploader} from "../../../../src/shared/apis/uploader";
 import {Publisher, ResolverFilterData} from "type-graphql";
 import BlockDataSource
   from "../../../../src/features/block/data/block-data-source";
@@ -39,7 +38,6 @@ import BlockDataSource
 const MockChatDS = mock<ChatDataSource>();
 const MockBlockDS = mock<BlockDataSource>();
 const MockFileUtils = mock<FileUtils>();
-const MockUploader = mock<IUploader>();
 const MockMessagePublish = mock<{ pub: Publisher<MessageSubscriptionPayload> }>();
 const MockTypingPublish = mock<{ pub: Publisher<TypingSubscriptionPayload> }>();
 const userID = 'userIDDDD';
@@ -49,7 +47,6 @@ const context = {
     dataSources: {
       chatDS: instance(MockChatDS),
       blockDS: instance(MockBlockDS),
-      uploader: instance(MockUploader),
     },
     utils: {
       file: instance(MockFileUtils)
@@ -62,7 +59,6 @@ const resolver = new ChatResolver();
 beforeEach(() => {
   reset(MockChatDS);
   reset(MockFileUtils);
-  reset(MockUploader);
   reset(MockMessagePublish);
   reset(MockTypingPublish);
   reset(MockBlockDS);

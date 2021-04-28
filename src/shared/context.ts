@@ -6,7 +6,6 @@ import UserDataSource from "../features/user/data/user-data-source";
 import {UserValidators} from "../features/user/graphql/validators";
 import FileUtils from "./utils/file-utils";
 import FriendDataSource from "../features/friend/data/friend-data-source";
-import {IUploader} from "./apis/uploader";
 import BadgeDataSource from "../features/badge/data/badge-data-source";
 import NotificationDataSource
   from "../features/notification/data/notification-data-source";
@@ -29,7 +28,6 @@ export type ToolBox = {
 
 export type DataSources = {
   googleAPI: GoogleAPI,
-  uploader: IUploader,
   tokens: Tokens,
   userDS: UserDataSource,
   authDS: AuthDataSource,

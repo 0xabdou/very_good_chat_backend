@@ -28,7 +28,7 @@ export class AuthResolver {
         {
           path: '/auth',
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV == "prod",
           maxAge: 1000 * 60 * 60 * 24 * 7 * 365 // 7 years
         }
       );

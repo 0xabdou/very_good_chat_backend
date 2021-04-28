@@ -6,7 +6,6 @@ const TYPES = {
   PrismaClient: Symbol('PrismaClient'),
   Axios: Symbol('Axios'),
   Storage: Symbol('Storage'),
-  IUploader: Symbol('IUploader'),
   AuthDataSource: Symbol('AuthDataSource'),
   UserDataSource: Symbol('UserDataSource'),
   FriendDataSource: Symbol('FriendDataSource'),

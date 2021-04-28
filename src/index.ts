@@ -2,6 +2,9 @@ import 'reflect-metadata';
 import createApp from './app';
 import container, {initContainer} from "./service-locator/container";
 import TYPES from "./service-locator/types";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const bootstrap = async () => {
   await initContainer();
